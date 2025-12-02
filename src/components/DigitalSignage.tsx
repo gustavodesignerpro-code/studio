@@ -1,7 +1,6 @@
 "use client";
 
 import { usePlaylist } from '@/hooks/use-playlist';
-import { LiveClock } from '@/components/LiveClock';
 import { Slideshow } from '@/components/Slideshow';
 import { EmptyState } from '@/components/states/EmptyState';
 import LoadingState from '@/app/loading';
@@ -64,12 +63,11 @@ export function DigitalSignage() {
   return (
     <div className="relative h-svh w-svh overflow-hidden bg-black">
       <Slideshow playlist={playlist} />
-      <LiveClock />
       {logoUrl && (
         <img 
           src={logoUrl} 
           alt="Store Logo" 
-          className="absolute bottom-4 left-4 h-16 w-auto drop-shadow-lg" 
+          className="absolute bottom-4 left-4 h-16 w-auto drop-shadow-lg z-20" 
         />
       )}
       {isLoading && !isInitialLoad && (

@@ -1,5 +1,5 @@
 
-export type PlaylistItemType = 'video' | 'imagem' | 'texto';
+export type PlaylistItemType = 'video' | 'imagem' | 'texto' | 'clock';
 
 export interface PlaylistItem {
   ordem: number;

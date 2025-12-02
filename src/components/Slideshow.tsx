@@ -5,6 +5,7 @@ import type { PlaylistItem } from '@/types/playlist';
 import { VideoPlayer } from './content/VideoPlayer';
 import { ImageViewer } from './content/ImageViewer';
 import { TextViewer } from './content/TextViewer';
+import { FullscreenClock } from './content/FullscreenClock';
 import { Loader } from 'lucide-react';
 
 interface SlideshowProps {
@@ -58,6 +59,8 @@ export function Slideshow({ playlist }: SlideshowProps) {
         return <ImageViewer src={currentItem.url} />;
       case 'texto':
         return <TextViewer text={currentItem.texto || ''} />;
+      case 'clock':
+        return <FullscreenClock />;
       default:
         handleNext(); // Skip invalid item type
         return null;
