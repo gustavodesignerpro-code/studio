@@ -16,6 +16,7 @@ export function ImageViewer({ src }: ImageViewerProps) {
         sizes="100vw"
         style={{ objectFit: 'contain' }}
         priority // Preload the current image
+        unoptimized // Necessary for blob URLs from cache
       />
     </div>
   );

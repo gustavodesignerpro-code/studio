@@ -1,65 +1,45 @@
-# StoreCast - Sinalização Digital com Next.js e Firebase
+# StoreCast - Sinalização Digital com Next.js e Google Drive
 
-O StoreCast é uma aplicação completa de sinalização digital (digital signage) projetada para rodar em qualquer Smart TV com um navegador web (como Android TV, Google TV ou Fire TV). Ele utiliza Next.js 15, TypeScript, Tailwind CSS e Firebase para oferecer uma experiência de conteúdo imersiva, gerenciada remotamente e em tempo real para ambientes de varejo.
+O StoreCast é uma aplicação completa de sinalização digital (digital signage) projetada para rodar em qualquer Smart TV com um navegador web. Ele utiliza Next.js 15, TypeScript, Tailwind CSS, e Firebase Firestore para gerenciamento de conteúdo, com todas as mídias (vídeos e imagens) hospedadas diretamente no Google Drive.
 
-## Funcionalidades
+Esta versão implementa um sistema avançado de **pré-download e cache local**, garantindo que a reprodução seja sempre fluida, sem travamentos, e funcione perfeitamente mesmo com conexões de internet instáveis ou offline após o primeiro carregamento.
 
-- **Tela Cheia Automática**: Entra em modo de tela cheia ao iniciar para uma exibição ininterrupta.
-- **Playlist em Tempo Real**: O conteúdo é gerenciado no Firebase Firestore e atualiza na tela instantaneamente.
-- **Suporte Multimídia**: Exibe vídeos, imagens e slides de texto formatado.
-- **Interface Otimizada para Distância**: Todos os visuais são otimizados para visualização à distância (10-foot UI).
-- **Relógio ao Vivo**: Exibição constante da hora e data atuais.
-- **Zero Interação**: Roda automaticamente sem necessidade de intervenção do usuário. Entradas de controle remoto/teclado são desativadas para prevenir saídas acidentais.
-- **Resiliente**: Pré-carrega as mídias, exibe estados de carregamento e de lista vazia de forma elegante, e tenta reconectar se a conexão com a internet cair.
-- **Seguro**: Utiliza as regras de segurança do Firebase para proteger seus dados, sem expor chaves sensíveis no lado do cliente.
-- **Pronto para Múltiplas Lojas**: Suporta diferentes playlists através de um parâmetro na URL (ex: `?loja=minha-loja`).
+## Funcionalidades Principais
+
+- **Cache Inteligente**: Baixa e armazena todas as mídias localmente antes de exibi-las. A reprodução é feita 100% a partir do cache, eliminando buffering.
+- **Atualização Automática**: Qualquer alteração na playlist no Firestore (incluindo a mudança de `versao` de um item) dispara um novo download em segundo plano e atualiza o cache.
+- **Operação Offline**: Após o primeiro carregamento completo, a aplicação funciona sem necessidade de conexão com a internet, usando os arquivos em cache.
+- **Suporte a Google Drive**: Utiliza links diretos do Google Drive para buscar as mídias, simplificando o gerenciamento de arquivos.
+- **Multi-Loja**: Suporta diferentes playlists para diferentes lojas através de um parâmetro na URL (ex: `?loja=minha-loja`).
+- **Interface Otimizada para TV (10-foot UI)**: Visuais limpos, fontes grandes e transições suaves.
+- **Resiliência**: Tenta reconectar ao Firestore automaticamente e lida de forma elegante com estados de erro, carregamento e playlists vazias.
+- **Zero Interação**: Roda automaticamente em tela cheia, com entradas de teclado/controle remoto desativadas para prevenir saídas acidentais.
 
 ## Tecnologias Utilizadas
 
 - **Framework**: Next.js 15 (App Router)
 - **Linguagem**: TypeScript
 - **Estilização**: Tailwind CSS & shadcn/ui
-- **Backend**: Firebase (Firestore para banco de dados, Storage para mídias)
+- **Banco de Dados**: Firebase Firestore
+- **Armazenamento de Mídia**: Google Drive
+- **Cache**: Service Worker (Cache API)
 - **Deployment**: Vercel
 
 ---
 
 ## 1. Configuração do Projeto Firebase
 
-Antes de rodar a aplicação, você precisa configurar um projeto no Firebase.
+### 1.1. Crie um Projeto Firebase e um Banco de Dados Firestore
 
-### 1.1. Crie um Projeto Firebase
+Siga os passos no [Firebase Console](https://console.firebase.google.com/) para criar um novo projeto e, dentro dele, ative o **Firestore Database** em **modo de produção**.
 
-1.  Acesse o [Console do Firebase](https://console.firebase.google.com/).
-2.  Clique em **"Adicionar projeto"** e siga as instruções na tela para criar um novo projeto. Dê um nome como "StoreCast".
+### 1.2. Obtenha as Chaves de Configuração
 
-### 1.2. Crie um Banco de Dados Firestore
+No seu projeto Firebase, adicione um **Aplicativo da Web** e copie o objeto `firebaseConfig` fornecido.
 
-1.  No console do seu novo projeto, vá para a seção **Build > Firestore Database**.
-2.  Clique em **"Criar banco de dados"**.
-3.  Escolha **"Iniciar em modo de produção"**. Isso é crucial para a segurança.
-4.  Selecione uma localização para seu banco de dados.
-5.  Clique em **"Ativar"**.
+### 1.3. Crie o arquivo `.env.local`
 
-### 1.3. Configure o Firebase Storage
-
-1.  Navegue até **Build > Storage**.
-2.  Clique em **"Começar"**.
-3.  Siga as instruções para ativar o Cloud Storage. Você pode usar as regras de segurança padrão por enquanto; nós as atualizaremos mais tarde.
-
-### 1.4. Obtenha as Chaves de Configuração do Firebase
-
-1.  No console do Firebase, vá para **Visão geral do projeto** e clique no **ícone Web (`</>`)** para adicionar um aplicativo da web ao seu projeto.
-2.  Dê um apelido para seu app (ex: "StoreCast Web") e clique em **"Registrar app"**.
-3.  O Firebase fornecerá um objeto `firebaseConfig`. Copie essas chaves. Você precisará delas para o próximo passo.
-
----
-
-## 2. Configuração do Projeto Local
-
-### 2.1. Variáveis de Ambiente
-
-Crie um arquivo chamado `.env.local` na raiz do seu projeto e cole suas chaves de configuração do Firebase nele. As chaves devem ser prefixadas com `NEXT_PUBLIC_`.
+Na raiz do projeto, crie um arquivo `.env.local` e cole suas chaves, prefixadas com `NEXT_PUBLIC_`:
 
 ```
 NEXT_PUBLIC_FIREBASE_API_KEY="SUA_API_KEY"
@@ -70,160 +50,130 @@ NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID="SEU_MESSAGING_SENDER_ID"
 NEXT_PUBLIC_FIREBASE_APP_ID="SEU_APP_ID"
 ```
 
-### 2.2. Instale as Dependências
+### 1.4. Regras de Segurança do Firestore
 
-Se ainda não o fez, instale as dependências do projeto:
-
-```bash
-npm install
-```
-
-### 2.3. Rode o Servidor de Desenvolvimento
-
-Inicie o servidor de desenvolvimento do Next.js:
-
-```bash
-npm run dev
-```
-
-A aplicação estará disponível em `http://localhost:9002`.
-
----
-
-## 3. Regras de Segurança do Firebase
-
-Para que o app funcione de forma segura, você precisa aplicar as regras de segurança corretas ao Firestore e ao Storage.
-
-### 3.1. Regras de Segurança do Firestore
-
-1.  Vá para a aba **Firestore Database > Regras** no console do Firebase.
-2.  Substitua as regras existentes pelas seguintes:
+Para permitir que a aplicação leia as playlists publicamente, vá até a aba **Firestore Database > Regras** e publique as seguintes regras:
 
 ```
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Permite acesso público de leitura à coleção de playlists
+    // Permite leitura pública das coleções de playlists e configurações
     match /playlists/{storeId} {
       allow read: if true;
-      allow write: if request.auth != null; // Apenas usuários autenticados (admins) podem escrever
+      allow write: if request.auth != null; // Apenas admins autenticados podem escrever
     }
-
-    // Nega todos os outros acessos
-    match /{document=**} {
-      allow read, write: if false;
-    }
-  }
-}
-```
-
-3.  Clique em **"Publicar"**. Isso permite que qualquer pessoa leia os dados da playlist, mas restringe a escrita a usuários autenticados (que você configuraria para um painel de administração).
-
-### 3.2. Regras de Segurança do Storage
-
-1.  Vá para a aba **Storage > Regras** no console do Firebase.
-2.  Substitua as regras existentes por estas:
-
-```
-rules_version = '2';
-service firebase.storage {
-  match /b/{bucket}/o {
-    // Permite acesso público de leitura a todos os arquivos
-    match /{allPaths=**} {
+    match /config/{storeId} {
       allow read: if true;
-      allow write: if request.auth != null; // Apenas usuários autenticados podem fazer upload
+      allow write: if request.auth != null; // Apenas admins autenticados podem escrever
     }
   }
 }
 ```
-
-3.  Clique em **"Publicar"**. Isso torna todas as mídias enviadas publicamente legíveis.
 
 ---
 
-## 4. Gerenciando o Conteúdo
+## 2. Configurando o Google Drive
 
-Seu conteúdo é gerenciado em uma coleção do Firestore chamada `playlists`.
+### 2.1. Organize seus arquivos
 
-### 4.1. Estrutura da Playlist
+Crie uma pasta no seu Google Drive para organizar as mídias da sua sinalização.
 
-Cada documento na coleção `playlists` representa a playlist de uma loja específica. O ID do documento deve corresponder ao ID da loja (ex: `main`, `filial-2`).
+### 2.2. Obtenha o ID do Arquivo
 
-O documento deve conter um único campo:
-- **items**: `array`
+Para cada arquivo (imagem ou vídeo) que você quer usar:
+1.  Clique com o botão direito no arquivo e selecione **"Compartilhar"** > **"Compartilhar"**.
+2.  Em **"Acesso geral"**, mude para **"Qualquer pessoa com o link"**. Isso é crucial para que o app possa baixar o arquivo.
+3.  Clique em **"Copiar link"**. O link será algo como: `https://drive.google.com/file/d/ID_DO_ARQUIVO/view?usp=sharing`.
+4.  O **ID do Arquivo** é a longa string de caracteres entre `d/` e `/view`. Copie apenas esse ID. É ele que você usará no Firestore.
 
-Cada objeto no array `items` representa um slide e deve ter os seguintes campos:
+**URLs geradas pelo código:**
+- **Imagens**: `https://drive.google.com/uc?export=download&id={ID_DO_ARQUIVO}`
+- **Vídeos**: `https://drive.google.com/uc?export=view&id={ID_DO_ARQUIVO}`
 
-- **ordem**: `number` (ex: 1, 2, 3) - A ordem de exibição.
-- **tipo**: `string` - O tipo de conteúdo. Deve ser `"video"`, `"imagem"`, ou `"texto"`.
-- **url**: `string`
-    - Para `video` ou `imagem`, esta é a URL de download direto do Firebase Storage.
-    - Para `texto`, este é o texto plano que você deseja exibir.
-- **duracao**: `number` - O tempo em segundos que o item permanece na tela. Para vídeos, isso é ignorado e a duração real do vídeo é usada.
-- **ativo**: `boolean` - Defina como `true` para exibir o item, `false` para ocultá-lo sem deletar.
-- **criadoEm**: `timestamp` (Opcional) - A data de criação.
+---
 
-### 4.2. Exemplo de Documento
+## 3. Gerenciando o Conteúdo no Firestore
 
-**Coleção**: `playlists`
-**ID do Documento**: `main`
+O conteúdo é gerenciado em duas coleções principais: `playlists` e `config`.
 
-**Campo**:
-- `items` (Array):
-  ```json
-  [
+### 3.1. Coleção `playlists`
+
+- Cada **documento** nesta coleção representa uma loja. O ID do documento é o ID da loja (ex: `main`, `filial-sp`).
+- Cada documento deve ter um campo `items` do tipo `array`.
+
+**Estrutura de um item no array `items`:**
+
+- **ordem**: `number` (ex: 1, 2, 3) - Ordem de exibição.
+- **tipo**: `string` - `"imagem"`, `"video"`, ou `"texto"`.
+- **driveId**: `string` - O ID do arquivo do Google Drive (obrigatório para imagem/vídeo).
+- **duracao**: `number` - Duração em segundos (ignorado para vídeos).
+- **texto**: `string` - Conteúdo para slides do tipo `texto`.
+- **ativo**: `boolean` - `true` para exibir, `false` para ocultar.
+- **versao**: `number` - **MUITO IMPORTANTE!** Comece com `1`. Sempre que você alterar este item (ex: trocar a imagem), incremente este número (para `2`, `3`, etc.). Isso força o app a limpar o cache antigo e baixar a nova versão.
+
+### 3.2. Coleção `config` (Opcional)
+
+- Usada para configurações globais por loja.
+- O ID do documento também é o ID da loja.
+- **logoDriveId**: `string` - ID do arquivo da logo da loja no Google Drive. Se presente, a logo será exibida no canto inferior esquerdo.
+
+### Exemplo de Documento `playlists/main`:
+
+```json
+{
+  "items": [
     {
       "ordem": 1,
       "tipo": "imagem",
-      "url": "https://firebasestorage.googleapis.com/...",
+      "driveId": "1aB2cD3eF4gH5iJ6kL7mN8oP9qR0sT",
       "duracao": 15,
-      "ativo": true
+      "ativo": true,
+      "versao": 1
     },
     {
       "ordem": 2,
       "tipo": "texto",
-      "url": "Grande promoção! Todos os itens com 50% de desconto!",
+      "texto": "Grande promoção! 50% de desconto em toda a loja!",
+      "driveId": "",
       "duracao": 10,
-      "ativo": true
+      "ativo": true,
+      "versao": 1
     },
     {
       "ordem": 3,
       "tipo": "video",
-      "url": "https://firebasestorage.googleapis.com/...",
-      "duracao": 0,
-      "ativo": true
+      "driveId": "2bC3dE4fG5hI6jK7lM8nO9pQ0rS1tU",
+      "duracao": 0, // Ignorado
+      "ativo": true,
+      "versao": 2 // Este vídeo foi atualizado
     }
   ]
-  ```
-
-### 4.3. Fazendo Upload de Mídias e Obtendo URLs
-
-1.  Vá para a seção **Storage** no console do Firebase.
-2.  Faça o upload dos seus arquivos de imagem ou vídeo.
-3.  Clique no arquivo enviado para ver seus detalhes.
-4.  Copie a **URL de Download** do painel de detalhes do arquivo. Esta é a URL que você usará no seu documento do Firestore.
+}
+```
 
 ---
 
-## 5. Deployment
+## 4. Rodando e Fazendo Deploy
 
-Fazer o deploy da sua aplicação StoreCast é simples com a Vercel.
+### 4.1. Rodando Localmente
 
-1.  Envie seu código para um repositório Git (GitHub, GitLab, Bitbucket).
-2.  Acesse [Vercel](https://vercel.com/new) e cadastre-se com sua conta Git.
-3.  Clique em **"Add New... > Project"**.
-4.  Importe o repositório Git que contém seu projeto.
-5.  Na seção **Environment Variables**, adicione as mesmas chaves do Firebase que você usou no seu arquivo `.env.local`.
-6.  Clique em **"Deploy"**.
+1.  Instale as dependências: `npm install`
+2.  Inicie o servidor de desenvolvimento: `npm run dev`
+3.  Abra `http://localhost:9002` no seu navegador. Para testar a playlist de uma loja, use `http://localhost:9002/?loja=main`.
 
-A Vercel irá construir e implantar sua aplicação. Você receberá uma URL pública que pode abrir na sua Smart TV.
+### 4.2. Deploy na Vercel
 
----
+1.  Envie seu código para um repositório Git (GitHub, GitLab, etc.).
+2.  Crie uma conta na [Vercel](https://vercel.com) e importe seu projeto.
+3.  Nas configurações do projeto na Vercel, adicione as mesmas variáveis de ambiente do seu arquivo `.env.local`.
+4.  Clique em **"Deploy"**.
 
-## 6. Usando em uma Smart TV
+### 4.3. Usando na Smart TV
 
-1.  Abra o navegador web na sua Android TV, Google TV ou outra Smart TV.
-2.  Navegue para a URL fornecida pela Vercel.
-3.  Para exibir o conteúdo de uma loja específica, adicione o parâmetro `?loja=` à URL. Por exemplo: `https://seu-app.vercel.app/?loja=filial-2`. Se omitido, o padrão é `?loja=main`.
-4.  Clique no botão "Iniciar" para lançar a aplicação em tela cheia.
-5.  **Para Android/Google TV**: Você pode usar um app como o "Website Shortcut" da Play Store para criar um atalho na sua tela inicial que abre a URL diretamente, fazendo com que pareça um aplicativo nativo.
+1.  Abra o navegador da sua TV (Android TV, Google TV, Fire TV, etc.).
+2.  Navegue para a URL da sua aplicação na Vercel (ex: `https://meu-storecast.vercel.app`).
+3.  Use o parâmetro `?loja=` para especificar a playlist (ex: `?loja=filial-sp`). Se omitido, o padrão é `main`.
+4.  Clique em "Iniciar" para entrar em modo de tela cheia.
+
+**Dica para Android TV/Google TV**: Use apps como o ["Website Shortcut"](https://play.google.com/store/apps/details?id=com.deltacdev.websiteshortcut) para criar um atalho na tela inicial que abre a URL diretamente, simulando um app nativo.

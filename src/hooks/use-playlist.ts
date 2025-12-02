@@ -1,18 +1,20 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { doc, onSnapshot } from 'firebase/firestore';
+import { doc, onSnapshot, query, collection, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import type { PlaylistItem, PlaylistDocument } from '@/types/playlist';
+import type { PlaylistItem, PlaylistDocument, ConfigDocument } from '@/types/playlist';
 
 interface UsePlaylistReturn {
   playlist: PlaylistItem[] | null;
+  logoUrl: string | null;
   isLoading: boolean;
   error: Error | null;
 }
 
 export function usePlaylist(storeId: string): UsePlaylistReturn {
   const [playlist, setPlaylist] = useState<PlaylistItem[] | null>(null);
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
@@ -23,21 +25,22 @@ export function usePlaylist(storeId: string): UsePlaylistReturn {
         return;
     }
     
+    // Subscribe to the specific store playlist document
     const docRef = doc(db, 'playlists', storeId);
     
-    const unsubscribe = onSnapshot(
+    const unsubscribePlaylist = onSnapshot(
       docRef,
       (docSnap) => {
         if (docSnap.exists()) {
           const data = docSnap.data() as PlaylistDocument;
-          const activeItems = data.items
+          const activeItems = (data.items || [])
             .filter(item => item.ativo)
             .sort((a, b) => a.ordem - b.ordem);
           
           setPlaylist(activeItems);
           setError(null);
         } else {
-          setPlaylist([]);
+          setPlaylist([]); // Set to empty array if document doesn't exist
           console.warn(`Playlist for store '${storeId}' not found.`);
         }
         setIsLoading(false);
@@ -49,8 +52,34 @@ export function usePlaylist(storeId: string): UsePlaylistReturn {
       }
     );
 
-    return () => unsubscribe();
+    // Subscribe to the config document for the logo
+    const configRef = doc(db, 'config', storeId);
+    const unsubscribeConfig = onSnapshot(
+      configRef,
+      (docSnap) => {
+        if(docSnap.exists()) {
+          const configData = docSnap.data() as ConfigDocument;
+          if (configData.logoDriveId) {
+             setLogoUrl(`https://drive.google.com/uc?export=download&id=${configData.logoDriveId}`);
+          } else {
+            setLogoUrl(null);
+          }
+        } else {
+          setLogoUrl(null);
+        }
+      },
+      (err) => {
+        console.error("Error fetching config:", err);
+        // Not a fatal error, so we just log it.
+      }
+    );
+
+
+    return () => {
+      unsubscribePlaylist();
+      unsubscribeConfig();
+    };
   }, [storeId]);
 
-  return { playlist, isLoading, error };
+  return { playlist, logoUrl, isLoading, error };
 }

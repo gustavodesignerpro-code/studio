@@ -1,37 +1,13 @@
 "use client";
 
-import { automateFullscreenBasedOnDevice } from '@/ai/flows/automate-fullscreen-based-on-device';
 import { DigitalSignage } from '@/components/DigitalSignage';
 import { Button } from '@/components/ui/button';
 import { useState, useCallback, useEffect } from 'react';
 import { Tv } from 'lucide-react';
+import { requestFullscreen } from '@/lib/fullscreen';
 
 export default function HomePage() {
   const [isStarted, setIsStarted] = useState(false);
-
-  const requestFullscreen = useCallback(async () => {
-    try {
-      // Use AI to get the best method for the current browser
-      const { fullscreenMethod } = await automateFullscreenBasedOnDevice({
-        userAgent: navigator.userAgent,
-      });
-      
-      // Execute the recommended code
-      const func = new Function(fullscreenMethod);
-      func();
-    } catch (error) {
-      console.error('AI-driven fullscreen failed, using fallback:', error);
-      // Fallback for safety or if AI fails
-      const element = document.documentElement;
-      if (element.requestFullscreen) {
-        element.requestFullscreen();
-      } else if ((element as any).webkitRequestFullscreen) { /* Safari */
-        (element as any).webkitRequestFullscreen();
-      } else if ((element as any).msRequestFullscreen) { /* IE11 */
-        (element as any).msRequestFullscreen();
-      }
-    }
-  }, []);
 
   const handleStart = async () => {
     await requestFullscreen();
@@ -44,7 +20,6 @@ export default function HomePage() {
 
     const handler = (e: KeyboardEvent) => {
       e.preventDefault();
-      // You can add specific key handling here if needed in the future
     };
 
     window.addEventListener('keydown', handler);

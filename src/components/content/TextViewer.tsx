@@ -6,8 +6,8 @@ interface TextViewerProps {
 
 export function TextViewer({ text }: TextViewerProps) {
   return (
-    <div className="h-full w-full bg-black flex items-center justify-center p-16">
-      <p className="text-white text-center font-bold text-7xl leading-tight drop-shadow-lg" style={{ fontSize: 'clamp(48px, 6vw, 96px)' }}>
+    <div className="h-full w-full bg-primary flex items-center justify-center p-16">
+      <p className="text-primary-foreground text-center font-bold drop-shadow-lg" style={{ fontSize: 'clamp(48px, 6vw, 96px)', lineHeight: '1.2' }}>
         {text}
       </p>
     </div>

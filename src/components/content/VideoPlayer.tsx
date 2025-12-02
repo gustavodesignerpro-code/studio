@@ -10,18 +10,22 @@ interface VideoPlayerProps {
 export function VideoPlayer({ src, onEnded }: VideoPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
 
-  // Attempt to play with sound
   useEffect(() => {
     const video = videoRef.current;
     if (video) {
+      // src is a blob URL, so it needs to be set and then played.
+      video.src = src;
       video.play().catch(error => {
-        // Autoplay with sound might be blocked. Try playing muted.
         console.warn("Autoplay with sound failed, trying muted:", error);
         video.muted = true;
-        video.play();
+        video.play().catch(err => {
+          console.error("Muted autoplay also failed:", err);
+          // If all fails, move to the next item.
+          onEnded();
+        });
       });
     }
-  }, [src]);
+  }, [src, onEnded]);
 
   return (
     <div className="h-full w-full bg-black">
@@ -36,8 +40,9 @@ export function VideoPlayer({ src, onEnded }: VideoPlayerProps) {
         }}
         autoPlay
         playsInline
+        muted // Start muted for better autoplay compatibility
       >
-        <source src={src} />
+        {/* The source is set programmatically to handle blob URLs */}
         Your browser does not support the video tag.
       </video>
     </div>

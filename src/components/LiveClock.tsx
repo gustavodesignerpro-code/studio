@@ -15,7 +15,7 @@ export function LiveClock() {
   }, []);
 
   const timeString = format(now, 'HH:mm');
-  const dateString = format(now, "EEEE, dd 'de' MMMM 'de' yyyy", {
+  const dateString = format(now, "EEEE, dd 'de' MMMM", {
     locale: ptBR,
   });
 
