@@ -113,9 +113,9 @@ export async function fetchPlaylist(etag: string | null): Promise<{ status: numb
     console.error("Failed to fetch from DatoCMS:", error);
      // Check if the error is a "Not Found" error from the API
     if (error.response && error.response.errors) {
-      const notFoundError = error.response.errors.find((e: any) => e.extensions?.code === 'NOT_FOUND');
+      const notFoundError = error.response.errors.find((e: any) => e.extensions?.code === 'undefinedField' || e.extensions?.code === 'NOT_FOUND');
       if (notFoundError) {
-        return { status: 404, data: { items: [], logoUrl: null }, error: 'Configuração da TV não encontrada. Verifique se o modelo foi criado e publicado.', etag: null };
+        return { status: 404, data: { items: [], logoUrl: null }, error: 'O modelo "Configuração da TV" (API Key: configuracao_da_tv) não foi encontrado. Verifique se o modelo foi criado, publicado e se a API Key está correta.', etag: null };
       }
     }
     return { status: 500, data: null, error: error.message, etag: null };
