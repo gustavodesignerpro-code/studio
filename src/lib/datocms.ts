@@ -6,8 +6,9 @@ import type { PlaylistItem, PlaylistData } from '@/types/playlist';
 const API_URL = 'https://graphql.datocms.com/';
 
 // Estrutura da resposta da API do DatoCMS para um modelo de instância única
+// O nome do campo principal (itemsDeMidia) deve corresponder à API Key do seu modelo no DatoCMS
 interface DatoResponse {
-  configuracaoDaTv: {
+  itemsDeMidia: {
     _updatedAt: string;
     logo: {
       url: string;
@@ -26,14 +27,16 @@ interface DatoResponse {
       ativo: boolean;
       _updatedAt: string;
     }[];
-  } | null; // O modelo pode não existir ou não ter conteúdo publicado
+  } | null;
 }
 
 // Query GraphQL para um modelo de instância única
+// O nome do campo 'itemsDeMidia' deve ser exatamente o camelCase da API Key do seu modelo no DatoCMS
+// Ex: API Key 'items_de_midia' -> 'itemsDeMidia'
 const GET_PLAYLIST_QUERY = gql`
   query GetPlaylist {
-    configuracaoDaTv {
-      _updatedAt # Used for cache invalidation of the whole playlist
+    itemsDeMidia {
+      _updatedAt
       logo {
         url
       }
@@ -49,7 +52,7 @@ const GET_PLAYLIST_QUERY = gql`
         texto
         duracao
         ativo
-        _updatedAt # Used for cache invalidation of individual items
+        _updatedAt
       }
     }
   }
@@ -72,7 +75,7 @@ export async function fetchPlaylist(etag: string | null): Promise<{ status: numb
   try {
     const datoData: DatoResponse = await client.request(GET_PLAYLIST_QUERY);
     
-    const configuracao = datoData.configuracaoDaTv;
+    const configuracao = datoData.itemsDeMidia;
     const newEtag = configuracao?._updatedAt ?? null;
 
     if (etag && newEtag === etag) {
@@ -80,7 +83,7 @@ export async function fetchPlaylist(etag: string | null): Promise<{ status: numb
     }
 
     if (!configuracao) {
-      return { status: 404, data: { items: [], logoUrl: null }, error: `Nenhuma configuração encontrada. Verifique se o modelo "Configuração da TV" (com API key 'configuracao_da_tv') foi criado, configurado como instância única e publicado no DatoCMS.`, etag: newEtag };
+      return { status: 404, data: { items: [], logoUrl: null }, error: `Nenhuma configuração encontrada para o modelo com API key 'items_de_midia'. Verifique se o modelo foi criado, configurado como instância única e publicado no DatoCMS.`, etag: newEtag };
     }
     
     const transformedItems: PlaylistItem[] = (configuracao.items || [])
@@ -98,7 +101,7 @@ export async function fetchPlaylist(etag: string | null): Promise<{ status: numb
           texto: item.texto ?? '',
           duracao: duracao || 10,
           ativo: item.ativo,
-          versao: item._updatedAt, // Use _updatedAt of the block for cache busting
+          versao: item._updatedAt,
         };
       });
 
@@ -111,11 +114,10 @@ export async function fetchPlaylist(etag: string | null): Promise<{ status: numb
 
   } catch (error: any) {
     console.error("Failed to fetch from DatoCMS:", error);
-     // Check if the error is a "Not Found" error from the API
     if (error.response && error.response.errors) {
       const notFoundError = error.response.errors.find((e: any) => e.extensions?.code === 'undefinedField' || e.extensions?.code === 'NOT_FOUND');
       if (notFoundError) {
-        return { status: 404, data: { items: [], logoUrl: null }, error: "O modelo 'Configuração da TV' (API Key: configuracao_da_tv) não foi encontrado. Verifique as configurações no DatoCMS.", etag: null };
+        return { status: 404, data: { items: [], logoUrl: null }, error: "O modelo com API Key 'items_de_midia' não foi encontrado. Verifique as configurações no DatoCMS.", etag: null };
       }
     }
     return { status: 500, data: null, error: error.message, etag: null };

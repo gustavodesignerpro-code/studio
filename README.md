@@ -2,13 +2,13 @@
 
 O StoreCast é uma aplicação de sinalização digital (digital signage) para Smart TVs, construída com Next.js 15, TypeScript, Tailwind CSS e **DatoCMS** para gerenciamento de conteúdo e hospedagem de mídias.
 
-Esta versão é otimizada para um cenário de **loja única**, com um sistema avançado de **pré-download e cache local**, garantindo que a reprodução seja sempre fluida, sem travamentos, e funcione perfeitamente mesmo com conexões de internet instáveis ou totalmente offline após o primeiro carregamento.
+Esta versão é otimizada para um cenário de **loja única**, com um sistema de cache via **Service Worker**, garantindo que a reprodução seja sempre fluida, sem travamentos, e funcione perfeitamente mesmo com conexões de internet instáveis ou totalmente offline após o primeiro carregamento.
 
 ## Funcionalidades Principais
 
-- **Cache Inteligente**: Baixa e armazena todas as mídias (vídeos e imagens) localmente no navegador antes da exibição. A reprodução é feita 100% a partir do cache, eliminando buffering.
+- **Cache Inteligente (Service Worker)**: Na primeira vez que uma mídia é carregada, ela é salva no cache do navegador. Nas vezes seguintes, é carregada instantaneamente do cache, garantindo operação offline e zero buffering.
 - **Atualização em Tempo Real (via Polling)**: O app verifica por novas atualizações no DatoCMS a cada 2 minutos. Se encontrar uma nova versão da playlist, baixa o conteúdo novo em segundo plano.
-- **Operação Offline**: Após o primeiro carregamento completo, a aplicação funciona sem necessidade de conexão com a internet, usando os arquivos em cache.
+- **Operação Offline**: Após o primeiro carregamento completo, a aplicação funciona sem necessidade de conexão com a internet.
 - **Gerenciamento Centralizado via DatoCMS**: Todo o conteúdo (playlist, mídias, logo) é gerenciado de forma centralizada em uma única tela no DatoCMS.
 - **Interface Otimizada para TV (10-foot UI)**: Visuais limpos, fontes grandes e transições suaves.
 - **Resiliência**: Lida de forma elegante com estados de erro, carregamento e playlists vazias.
@@ -21,7 +21,7 @@ Esta versão é otimizada para um cenário de **loja única**, com um sistema av
 - **Estilização**: Tailwind CSS & shadcn/ui
 - **CMS & Armazenamento de Mídia**: [DatoCMS](https://www.datocms.com/)
 - **Comunicação com API**: GraphQL (`graphql-request`)
-- **Cache**: IndexedDB (`idb`) e Cache API
+- **Cache**: Service Worker (PWA)
 - **Deployment**: Vercel
 
 ---
@@ -30,14 +30,14 @@ Esta versão é otimizada para um cenário de **loja única**, com um sistema av
 
 A estrutura foi projetada para ser extremamente simples, usando um único modelo de "Instância Única".
 
-### 1.1. Crie o Modelo `Configuração da TV` (Instância Única)
+### 1.1. Crie o Modelo `Items de Midia` (Instância Única)
 
 1. Vá em **"Settings" > "Models"** e clique no `+` para criar um novo modelo.
-2. **Model name**: `Configuração da TV`
-3. **API key**: `configuracao_da_tv` (importante que seja exatamente isso!)
+2. **Model name**: `Items de Midia`
+3. **API key**: `items_de_midia` (**IMPORTANTE**: A API key deve ser exatamente esta para que a aplicação funcione!)
 4. Marque a opção **"Single instance (e.g. 'homepage')"**.
 
-**Campos do Modelo `Configuração da TV`:**
+**Campos do Modelo `Items de Midia`:**
 
 Adicione os seguintes campos a este modelo:
 
@@ -79,7 +79,7 @@ Adicione os seguintes campos a este modelo:
 
 ### 1.2. Adicione seu Conteúdo
 
-1. No menu lateral do DatoCMS, você verá **"Configuração da TV"** na seção "Content". Clique nele.
+1. No menu lateral do DatoCMS, você verá **"Items de Midia"** na seção "Content". Clique nele.
 2. Você será levado diretamente para a única tela de edição.
 3. No campo **"Logo da Loja"**, faça o upload da imagem do seu logo.
 4. No campo **"Itens da Playlist"**, clique em "Adicionar novo bloco" e selecione "Item de Mídia" para cada item que deseja exibir.
