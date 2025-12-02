@@ -8,6 +8,7 @@ import { EmptyState } from '@/components/states/EmptyState';
 import LoadingState from '@/app/loading';
 import { AlertCircle, WifiOff } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { MediaPreloader, type CachedMedia } from './MediaPreloader';
 
 export function DigitalSignage() {
   const searchParams = useSearchParams();
@@ -15,6 +16,8 @@ export function DigitalSignage() {
 
   const { playlist, isLoading, error } = usePlaylist(storeId);
   const [isOnline, setIsOnline] = useState(true);
+  const [cachedMedia, setCachedMedia] = useState<CachedMedia>({});
+  const [isPreloading, setIsPreloading] = useState(true);
 
   useEffect(() => {
     const handleOnline = () => setIsOnline(true);
@@ -61,12 +64,23 @@ export function DigitalSignage() {
     return <EmptyState />;
   }
   
-  // Placeholder for future multi-tenant feature where logo could be fetched
+  if (isPreloading) {
+    return (
+      <MediaPreloader
+        playlist={playlist}
+        onComplete={(media) => {
+          setCachedMedia(media);
+          setIsPreloading(false);
+        }}
+      />
+    );
+  }
+
   const logoUrl = undefined;
 
   return (
     <div className="relative h-svh w-svh overflow-hidden bg-black">
-      <Slideshow playlist={playlist} />
+      <Slideshow playlist={playlist} cachedMedia={cachedMedia} />
       <LiveClock />
       {logoUrl && (
         <img 

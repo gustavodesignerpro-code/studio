@@ -5,12 +5,14 @@ import type { PlaylistItem } from '@/types/playlist';
 import { VideoPlayer } from './content/VideoPlayer';
 import { ImageViewer } from './content/ImageViewer';
 import { TextViewer } from './content/TextViewer';
+import type { CachedMedia } from './MediaPreloader';
 
 interface SlideshowProps {
   playlist: PlaylistItem[];
+  cachedMedia: CachedMedia;
 }
 
-export function Slideshow({ playlist }: SlideshowProps) {
+export function Slideshow({ playlist, cachedMedia }: SlideshowProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
 
   const handleNext = useCallback(() => {
@@ -27,12 +29,14 @@ export function Slideshow({ playlist }: SlideshowProps) {
   }, [currentItem, handleNext]);
 
   const renderContent = () => {
+    const mediaUrl = cachedMedia[currentItem.url] || currentItem.url;
     switch (currentItem.tipo) {
       case 'video':
-        return <VideoPlayer src={currentItem.url} onEnded={handleNext} />;
+        return <VideoPlayer src={mediaUrl} onEnded={handleNext} />;
       case 'imagem':
-        return <ImageViewer src={currentItem.url} />;
+        return <ImageViewer src={mediaUrl} />;
       case 'texto':
+        // Text doesn't need a cached URL, it's the content itself
         return <TextViewer text={currentItem.url} />;
       default:
         // Skip invalid item type
