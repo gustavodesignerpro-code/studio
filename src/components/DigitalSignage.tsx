@@ -1,6 +1,5 @@
 "use client";
 
-import { useSearchParams } from 'next/navigation';
 import { usePlaylistWithCache } from '@/hooks/use-playlist-with-cache';
 import { LiveClock } from '@/components/LiveClock';
 import { Slideshow } from '@/components/Slideshow';
@@ -11,9 +10,6 @@ import { ErrorState } from './states/ErrorState';
 import { PreloadingState } from './states/PreloadingState';
 
 export function DigitalSignage() {
-  const searchParams = useSearchParams();
-  const storeId = searchParams.get('loja') || process.env.NEXT_PUBLIC_DEFAULT_STORE_ID || 'main';
-
   const {
     playlist,
     isLoading,
@@ -21,7 +17,7 @@ export function DigitalSignage() {
     isOnline,
     cacheStatus,
     logoUrl,
-  } = usePlaylistWithCache(storeId);
+  } = usePlaylistWithCache();
 
   if (!isOnline && cacheStatus.totalItems === 0) {
     return (

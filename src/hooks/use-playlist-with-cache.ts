@@ -19,8 +19,8 @@ interface CacheStatus {
   statusText: string;
 }
 
-export function usePlaylistWithCache(storeId: string) {
-  const { playlist, logoUrl, isLoading, error, fetchPlaylist } = usePlaylist(storeId);
+export function usePlaylistWithCache() {
+  const { playlist, logoUrl, isLoading, error, fetchPlaylist } = usePlaylist();
   const isOnline = useNetworkStatus();
   const [cacheStatus, setCacheStatus] = useState<CacheStatus>({
     totalItems: 0,
@@ -36,16 +36,14 @@ export function usePlaylistWithCache(storeId: string) {
 
   // Poll for updates every 2 minutes
   useEffect(() => {
-    if (!isFirstLoad.current) {
-        const interval = setInterval(() => {
-            if (isOnline) {
-                console.log('Verificando atualizações de conteúdo...');
-                fetchPlaylist();
-            }
-        }, 120000); // 2 minutes
+    const interval = setInterval(() => {
+        if (isOnline) {
+            console.log('Verificando atualizações de conteúdo...');
+            fetchPlaylist();
+        }
+    }, 120000); // 2 minutes
 
-        return () => clearInterval(interval);
-    }
+    return () => clearInterval(interval);
   }, [isOnline, fetchPlaylist]);
 
   const processQueue = useCallback(async () => {
@@ -65,7 +63,7 @@ export function usePlaylistWithCache(storeId: string) {
       const cacheKey = `${item.url}_${item.versao}`;
       await cacheMedia(item);
       setCacheStatus(prev => {
-        const newCachedKeys = [...prev.cachedKeys, cacheKey];
+        const newCachedKeys = [...new Set([...prev.cachedKeys, cacheKey])];
         return {
           ...prev,
           cachedItems: newCachedKeys.length,
@@ -108,20 +106,21 @@ export function usePlaylistWithCache(storeId: string) {
             const cacheKey = `${item.url}_${item.versao}`;
             const cachedUrl = await getMediaUrl(cacheKey, false); 
             if (cachedUrl) {
-                if (!cacheStatus.cachedKeys.includes(cacheKey)) {
-                   initialCachedKeys.push(cacheKey);
-                }
+                initialCachedKeys.push(cacheKey);
             } else if(isOnline) {
                 itemsToDownload.push(item);
             }
         }
         
-        setCacheStatus(prev => ({
+        setCacheStatus(prev => {
+          const combinedKeys = [...new Set([...prev.cachedKeys, ...initialCachedKeys])];
+          return {
             ...prev,
-            cachedItems: [...new Set([...prev.cachedKeys, ...initialCachedKeys])].length,
-            cachedKeys: [...new Set([...prev.cachedKeys, ...initialCachedKeys])],
+            cachedItems: combinedKeys.length,
+            cachedKeys: combinedKeys,
             statusText: 'Verificando mídias...'
-        }));
+          }
+        });
         
         if (itemsToDownload.length > 0) {
             downloadQueue.current = itemsToDownload;
@@ -135,6 +134,7 @@ export function usePlaylistWithCache(storeId: string) {
     
     checkCacheAndQueueDownloads();
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [playlist, isOnline, processQueue]);
 
 

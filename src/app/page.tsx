@@ -2,7 +2,7 @@
 
 import { DigitalSignage } from '@/components/DigitalSignage';
 import { Button } from '@/components/ui/button';
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Tv } from 'lucide-react';
 import { requestFullscreen } from '@/lib/fullscreen';
 

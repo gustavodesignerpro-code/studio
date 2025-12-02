@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import type { PlaylistItem } from '@/types/playlist';
-import { fetchPlaylistByStoreId } from '@/lib/datocms';
+import { fetchPlaylist as fetchPlaylistFromDato } from '@/lib/datocms';
 
 interface UsePlaylistReturn {
   playlist: PlaylistItem[] | null;
@@ -12,7 +12,7 @@ interface UsePlaylistReturn {
   fetchPlaylist: () => void;
 }
 
-export function usePlaylist(storeId: string): UsePlaylistReturn {
+export function usePlaylist(): UsePlaylistReturn {
   const [playlist, setPlaylist] = useState<PlaylistItem[] | null>(null);
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -20,19 +20,13 @@ export function usePlaylist(storeId: string): UsePlaylistReturn {
   const [lastEtag, setLastEtag] = useState<string | null>(null);
 
   const fetchPlaylist = useCallback(async () => {
-    if (!storeId) {
-        setIsLoading(false);
-        setError(new Error("ID da loja não especificado."));
-        return;
-    }
-    
     // Only set loading true on the very first fetch
     if (playlist === null) {
       setIsLoading(true);
     }
 
     try {
-      const result = await fetchPlaylistByStoreId(storeId, lastEtag);
+      const result = await fetchPlaylistFromDato(lastEtag);
       
       // If etag is the same, content has not changed
       if (result.status === 304) {
@@ -62,11 +56,12 @@ export function usePlaylist(storeId: string): UsePlaylistReturn {
     } finally {
       setIsLoading(false);
     }
-  }, [storeId, lastEtag, playlist]);
+  }, [lastEtag, playlist]);
 
   useEffect(() => {
     fetchPlaylist();
-  }, [storeId]); // Only runs when storeId changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only runs on initial mount
 
   return { playlist, logoUrl, isLoading, error, fetchPlaylist };
 }
