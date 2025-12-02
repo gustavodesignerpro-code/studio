@@ -12,7 +12,7 @@ import { PreloadingState } from './states/PreloadingState';
 
 export function DigitalSignage() {
   const searchParams = useSearchParams();
-  const storeId = searchParams.get('loja') || 'main';
+  const storeId = searchParams.get('loja') || process.env.NEXT_PUBLIC_DEFAULT_STORE_ID || 'main';
 
   const {
     playlist,
