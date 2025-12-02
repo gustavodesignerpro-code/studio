@@ -5,9 +5,9 @@ import type { PlaylistItem, PlaylistData } from '@/types/playlist';
 
 const API_URL = 'https://graphql.datocms.com/';
 
-// Estrutura da resposta da API do DatoCMS para um modelo de coleção
+// Estrutura da resposta da API do DatoCMS para um modelo de instância única
 interface DatoResponse {
-  allItemsDeMidia: {
+  configuracaoDaTv: {
     _updatedAt: string;
     logo: {
       url: string;
@@ -26,13 +26,13 @@ interface DatoResponse {
       ativo: boolean;
       _updatedAt: string;
     }[];
-  }[];
+  } | null; // O modelo pode não existir ou não ter conteúdo publicado
 }
 
-// Query GraphQL atualizada para buscar o primeiro item de uma coleção
+// Query GraphQL para um modelo de instância única
 const GET_PLAYLIST_QUERY = gql`
   query GetPlaylist {
-    allItemsDeMidia(first: 1) {
+    configuracaoDaTv {
       _updatedAt # Used for cache invalidation of the whole playlist
       logo {
         url
@@ -72,8 +72,7 @@ export async function fetchPlaylist(etag: string | null): Promise<{ status: numb
   try {
     const datoData: DatoResponse = await client.request(GET_PLAYLIST_QUERY);
     
-    // Pega a primeira (e única) configuração da TV encontrada
-    const configuracao = datoData.allItemsDeMidia?.[0];
+    const configuracao = datoData.configuracaoDaTv;
     const newEtag = configuracao?._updatedAt ?? null;
 
     if (etag && newEtag === etag) {
@@ -81,10 +80,10 @@ export async function fetchPlaylist(etag: string | null): Promise<{ status: numb
     }
 
     if (!configuracao) {
-      return { status: 404, data: { items: [], logoUrl: null }, error: `Nenhuma configuração encontrada no DatoCMS. Verifique se o modelo "Items de Midia" foi criado e se existe pelo menos um registro publicado.`, etag: newEtag };
+      return { status: 404, data: { items: [], logoUrl: null }, error: `Nenhuma configuração encontrada. Verifique se o modelo "Configuração da TV" (com API key 'configuracao_da_tv') foi criado, configurado como instância única e publicado no DatoCMS.`, etag: newEtag };
     }
     
-    const transformedItems: PlaylistItem[] = configuracao.items
+    const transformedItems: PlaylistItem[] = (configuracao.items || [])
       .filter(item => item.ativo)
       .map((item, index): PlaylistItem => {
         const url = item.media?.url ?? '';
@@ -105,7 +104,7 @@ export async function fetchPlaylist(etag: string | null): Promise<{ status: numb
 
     const playlistData: PlaylistData = {
       logoUrl: configuracao.logo?.url ?? null,
-      items: transformedItems, // A ordenação já vem do DatoCMS
+      items: transformedItems,
     };
 
     return { status: 200, data: playlistData, etag: newEtag };
@@ -116,7 +115,7 @@ export async function fetchPlaylist(etag: string | null): Promise<{ status: numb
     if (error.response && error.response.errors) {
       const notFoundError = error.response.errors.find((e: any) => e.extensions?.code === 'undefinedField' || e.extensions?.code === 'NOT_FOUND');
       if (notFoundError) {
-        return { status: 404, data: { items: [], logoUrl: null }, error: 'O modelo "Items de Midia" (API Key: items_de_midia) não foi encontrado ou não está publicado. Verifique as configurações no DatoCMS.', etag: null };
+        return { status: 404, data: { items: [], logoUrl: null }, error: "O modelo 'Configuração da TV' (API Key: configuracao_da_tv) não foi encontrado. Verifique as configurações no DatoCMS.", etag: null };
       }
     }
     return { status: 500, data: null, error: error.message, etag: null };

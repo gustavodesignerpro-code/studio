@@ -28,30 +28,25 @@ Esta versão é otimizada para um cenário de **loja única**, com um sistema av
 
 ## 1. Configuração do Projeto DatoCMS (Estrutura Ultra-Simplificada)
 
-A estrutura foi simplificada ao máximo. Você só precisa de um modelo.
+A estrutura foi projetada para ser extremamente simples, usando um único modelo de "Instância Única".
 
-### 1.1. Crie o Modelo `Items de Midia` (Modelo Padrão)
+### 1.1. Crie o Modelo `Configuração da TV` (Instância Única)
 
 1. Vá em **"Settings" > "Models"** e clique no `+` para criar um novo modelo.
-2. Escolha **"Standard model"** (é o padrão).
-3. **Model name**: `Items de Midia`
-4. **API key**: `items_de_midia` (importante que seja exatamente isso!)
+2. **Model name**: `Configuração da TV`
+3. **API key**: `configuracao_da_tv` (importante que seja exatamente isso!)
+4. Marque a opção **"Single instance (e.g. 'homepage')"**.
 
-**Campos do Modelo `Items de Midia`:**
+**Campos do Modelo `Configuração da TV`:**
 
 Adicione os seguintes campos a este modelo:
 
-1.  **Título Interno**: `Texto de Linha Única` (Single-line string)
-    -   **Label**: `Título Interno (ex: TV da Loja Principal)`
-    -   **Chave da API**: `titulo`
-    -   **Validação**: Marque como "Required" e "Use as title".
-
-2.  **Logo**: `Upload de arquivo único` (Single asset)
+1.  **Logo**: `Upload de arquivo único` (Single asset)
     -   **Label**: `Logo da Loja`
     -   **Chave da API**: `logo`
     -   **Validação**: Exigir que o valor corresponda a um padrão específico -> **Tipo de arquivo**: Imagem.
 
-3.  **Itens da Playlist**: `Conteúdo Modular` (Modular content)
+2.  **Itens da Playlist**: `Conteúdo Modular` (Modular content)
     -   **Label**: `Itens da Playlist`
     -   **Chave da API**: `items`
     -   Na configuração do campo, clique em **"Create new block"**.
@@ -84,14 +79,13 @@ Adicione os seguintes campos a este modelo:
 
 ### 1.2. Adicione seu Conteúdo
 
-1. No menu lateral do DatoCMS, você verá **"Items de Midia"** na seção "Content". Clique nele.
-2. Clique em **"New record"**.
-3. Dê um título, como "TV Principal".
-4. No campo **"Logo da Loja"**, faça o upload da imagem do seu logo.
-5. No campo **"Itens da Playlist"**, clique em "Adicionar novo bloco" e selecione "Item de Mídia" para cada item que deseja exibir.
-6. Preencha os campos para cada item diretamente ali.
-7. **Importante**: Cada vez que você editar e salvar, o campo `_updatedAt` (usado internamente como a `versao`) é atualizado. Isso invalida o cache antigo e força o download do novo conteúdo. Você pode reordenar os itens arrastando-os.
-8. Clique em **"Save"** e depois em **"Publish"**.
+1. No menu lateral do DatoCMS, você verá **"Configuração da TV"** na seção "Content". Clique nele.
+2. Você será levado diretamente para a única tela de edição.
+3. No campo **"Logo da Loja"**, faça o upload da imagem do seu logo.
+4. No campo **"Itens da Playlist"**, clique em "Adicionar novo bloco" e selecione "Item de Mídia" para cada item que deseja exibir.
+5. Preencha os campos para cada item diretamente ali.
+6. **Importante**: Cada vez que você editar e salvar, o campo `_updatedAt` (usado internamente como a `versao`) é atualizado. Isso invalida o cache antigo e força o download do novo conteúdo. Você pode reordenar os itens arrastando-os.
+7. Clique em **"Save"** e depois em **"Publish"**.
 
 ### 1.3. Obtenha as Chaves da API
 
