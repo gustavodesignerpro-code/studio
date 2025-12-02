@@ -16,9 +16,6 @@ export function VideoPlayer({ src, onEnded }: VideoPlayerProps) {
     if (video && video.src !== src) {
       video.src = src;
       video.load(); // Carrega a nova fonte
-      video.play().catch(() => {
-        // O autoplay pode falhar se não for mudo, o atributo `muted` no JSX cuida disso.
-      });
     }
   }, [src]);
 
@@ -29,17 +26,13 @@ export function VideoPlayer({ src, onEnded }: VideoPlayerProps) {
         key={src}
         className="h-full w-full object-contain"
         onEnded={onEnded}
-        onError={(e) => {
-          console.error("Erro na reprodução do vídeo:", e);
+        onError={() => {
           onEnded(); // Pula vídeo quebrado
         }}
         autoPlay
         playsInline
         muted // Essencial para o autoplay funcionar na maioria dos navegadores/dispositivos
-      >
-        <source src={src} type="video/mp4" />
-        Seu navegador não suporta a tag de vídeo.
-      </video>
+      />
     </div>
   );
 }
