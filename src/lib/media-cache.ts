@@ -1,28 +1,39 @@
 "use client";
 
-import { openDB } from 'idb';
+import { openDB, IDBPDatabase } from 'idb';
 import type { PlaylistItem } from '@/types/playlist';
 
 const CACHE_NAME = 'storecast-media-cache-v1';
 const DB_NAME = 'storecast-indexeddb-cache';
 const DB_VERSION = 1;
 const OBJECT_STORE_NAME = 'media-store';
-export const MAX_CONCURRENT_DOWNLOADS = 3; // Reduced from 5 for stability on cheaper devices
+export const MAX_CONCURRENT_DOWNLOADS = 3;
 
-// Initialize IndexedDB
-const dbPromise = openDB(DB_NAME, DB_VERSION, {
-  upgrade(db) {
-    if (!db.objectStoreNames.contains(OBJECT_STORE_NAME)) {
-      db.createObjectStore(OBJECT_STORE_NAME);
-    }
-  },
-});
+let dbPromise: Promise<IDBPDatabase> | null = null;
+
+// Lazy initialization of the database
+function getDb() {
+  if (typeof window === 'undefined') {
+    // Return a dummy promise on the server side
+    return Promise.reject(new Error('IndexedDB can only be used in the browser.'));
+  }
+  if (!dbPromise) {
+    dbPromise = openDB(DB_NAME, DB_VERSION, {
+      upgrade(db) {
+        if (!db.objectStoreNames.contains(OBJECT_STORE_NAME)) {
+          db.createObjectStore(OBJECT_STORE_NAME);
+        }
+      },
+    });
+  }
+  return dbPromise;
+}
+
 
 function getGoogleDriveUrl(item: PlaylistItem): string {
   if (item.tipo === 'video') {
     return `https://drive.google.com/uc?export=view&id=${item.driveId}`;
   }
-  // For images, 'download' is more reliable
   return `https://drive.google.com/uc?export=download&id=${item.driveId}`;
 }
 
@@ -31,7 +42,7 @@ function getGoogleDriveUrl(item: PlaylistItem): string {
 async function storeInCacheAPI(key: string, response: Response): Promise<void> {
   try {
     const cache = await caches.open(CACHE_NAME);
-    await cache.put(key, response);
+    await cache.put(new Request(key), response); // Use Request object as key
   } catch (error) {
     console.warn('Cache API not available or failed. Falling back to IndexedDB.', error);
     const blob = await response.blob();
@@ -40,7 +51,7 @@ async function storeInCacheAPI(key: string, response: Response): Promise<void> {
 }
 
 async function storeInIndexedDB(key: string, blob: Blob): Promise<void> {
-  const db = await dbPromise;
+  const db = await getDb();
   await db.put(OBJECT_STORE_NAME, blob, key);
 }
 
@@ -50,9 +61,8 @@ export async function cacheMedia(item: PlaylistItem): Promise<void> {
   const cacheKey = `${item.driveId}_${item.versao}`;
   const url = getGoogleDriveUrl(item);
 
-  // Fetch with a timeout to prevent hangs
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 60000); // 1-minute timeout
+  const timeoutId = setTimeout(() => controller.abort(), 60000); 
 
   try {
     const response = await fetch(url, { signal: controller.signal });
@@ -62,8 +72,6 @@ export async function cacheMedia(item: PlaylistItem): Promise<void> {
       throw new Error(`Failed to fetch ${url}: ${response.statusText}`);
     }
     
-    // We need to clone the response because it can only be consumed once.
-    // One clone goes to the cache, the original is returned for immediate use if needed.
     await storeInCacheAPI(cacheKey, response.clone());
   } catch (error) {
     clearTimeout(timeoutId);
@@ -78,7 +86,7 @@ export async function cacheMedia(item: PlaylistItem): Promise<void> {
 async function getFromCacheAPI(key: string): Promise<Response | undefined> {
    try {
     const cache = await caches.open(CACHE_NAME);
-    return await cache.match(key);
+    return await cache.match(new Request(key));
   } catch (error) {
     console.warn('Could not access Cache API.');
     return undefined;
@@ -87,7 +95,7 @@ async function getFromCacheAPI(key: string): Promise<Response | undefined> {
 
 async function getFromIndexedDB(key: string): Promise<Blob | undefined> {
   try {
-    const db = await dbPromise;
+    const db = await getDb();
     return await db.get(OBJECT_STORE_NAME, key);
   } catch (error) {
     console.warn('Could not access IndexedDB.');
@@ -96,23 +104,20 @@ async function getFromIndexedDB(key: string): Promise<Blob | undefined> {
 }
 
 export async function getMediaUrl(key: string, fetchFromNetwork = true): Promise<string | null> {
-  // 1. Try Cache API first
   const cacheResponse = await getFromCacheAPI(key);
   if (cacheResponse) {
     const blob = await cacheResponse.blob();
     return URL.createObjectURL(blob);
   }
 
-  // 2. Try IndexedDB as fallback
   const dbBlob = await getFromIndexedDB(key);
   if (dbBlob) {
     return URL.createObjectURL(dbBlob);
   }
   
-  // 3. If not in cache and fetching is allowed, go to network (should not happen in normal flow)
   if (fetchFromNetwork) {
     console.warn(`Cache miss for ${key}. Fetching from network (unexpected).`);
-    const [driveId, versao] = key.split('_');
+    const [driveId] = key.split('_');
     const url = `https://drive.google.com/uc?export=download&id=${driveId}`;
     try {
         const response = await fetch(url);
@@ -137,24 +142,23 @@ export async function clearOldCache(validKeys: string[]): Promise<void> {
   try {
     const cache = await caches.open(CACHE_NAME);
     const cachedRequests = await cache.keys();
-    cachedRequests.forEach(req => {
-      // A chave está embutida no final da URL do request do cache.
-      // Isso é um pouco frágil, mas é a maneira padrão de obter a chave.
-      const keyFromUrl = new URL(req.url).pathname.split('/').pop();
+    for (const req of cachedRequests) {
+       // A chave está embutida no final da URL do request do cache.
+      const keyFromUrl = req.url.split('/').pop();
       if (keyFromUrl && !validKeySet.has(keyFromUrl)) {
-        cache.delete(req);
+        await cache.delete(req);
       }
-    });
+    }
   } catch(e) { console.error('Failed to clean Cache API', e); }
 
   // Clear IndexedDB
   try {
-    const db = await dbPromise;
+    const db = await getDb();
     const allKeys = await db.getAllKeys(OBJECT_STORE_NAME);
-    allKeys.forEach(key => {
+    for (const key of allKeys) {
       if (typeof key === 'string' && !validKeySet.has(key)) {
-        db.delete(OBJECT_STORE_NAME, key);
+        await db.delete(OBJECT_STORE_NAME, key);
       }
-    });
+    }
   } catch(e) { console.error('Failed to clean IndexedDB', e); }
 }

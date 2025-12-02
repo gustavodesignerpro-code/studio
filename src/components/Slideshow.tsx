@@ -6,6 +6,7 @@ import { VideoPlayer } from './content/VideoPlayer';
 import { ImageViewer } from './content/ImageViewer';
 import { TextViewer } from './content/TextViewer';
 import { getMediaUrl } from '@/lib/media-cache';
+import { Loader } from 'lucide-react';
 
 interface SlideshowProps {
   playlist: PlaylistItem[];
@@ -37,16 +38,24 @@ export function Slideshow({ playlist }: SlideshowProps) {
     let cancelled = false;
 
     const fetchMedia = async () => {
+      if (!isMounted.current) return;
+      
+      setMediaUrl(null); // Reset while fetching new media
+
       if (currentItem.tipo === 'texto') {
-        setMediaUrl(currentItem.texto || '');
+        if (!cancelled) setMediaUrl(currentItem.texto || '');
         return;
       }
       
       const cacheKey = `${currentItem.driveId}_${currentItem.versao}`;
-      const url = await getMediaUrl(cacheKey);
-
-      if (!cancelled && isMounted.current) {
-        setMediaUrl(url);
+      try {
+        const url = await getMediaUrl(cacheKey);
+        if (!cancelled && isMounted.current) {
+          setMediaUrl(url);
+        }
+      } catch (error) {
+        console.error(`Error getting media URL for ${cacheKey}:`, error);
+        if (!cancelled) handleNext(); // Skip to next item on error
       }
     };
 
@@ -64,8 +73,11 @@ export function Slideshow({ playlist }: SlideshowProps) {
 
   const renderContent = () => {
     if (!mediaUrl) {
-      // Still loading from cache, can show a quick spinner or nothing
-      return null;
+      return (
+        <div className="flex h-full w-full items-center justify-center bg-black">
+          <Loader className="h-12 w-12 animate-spin text-primary" />
+        </div>
+      );
     }
 
     switch (currentItem.tipo) {
@@ -76,8 +88,7 @@ export function Slideshow({ playlist }: SlideshowProps) {
       case 'texto':
         return <TextViewer text={mediaUrl} />;
       default:
-        // Skip invalid item type
-        handleNext();
+        handleNext(); // Skip invalid item type
         return null;
     }
   };
