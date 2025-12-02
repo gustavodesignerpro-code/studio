@@ -10,20 +10,17 @@ interface VideoPlayerProps {
 export function VideoPlayer({ src, onEnded }: VideoPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
 
+  // Garantir que a fonte do vídeo seja atualizada quando o src muda.
   useEffect(() => {
     const video = videoRef.current;
-    if (video) {
+    if (video && video.src !== src) {
       video.src = src;
-      video.play().catch(error => {
-        console.warn("Autoplay com som falhou, tentando mudo:", error);
-        video.muted = true;
-        video.play().catch(err => {
-          console.error("Autoplay mudo também falhou:", err);
-          onEnded();
-        });
+      video.load(); // Carrega a nova fonte
+      video.play().catch(() => {
+        // O autoplay pode falhar se não for mudo, o atributo `muted` no JSX cuida disso.
       });
     }
-  }, [src, onEnded]);
+  }, [src]);
 
   return (
     <div className="h-full w-full bg-black">
@@ -38,7 +35,7 @@ export function VideoPlayer({ src, onEnded }: VideoPlayerProps) {
         }}
         autoPlay
         playsInline
-        muted // Começa mudo para maior compatibilidade de autoplay
+        muted // Essencial para o autoplay funcionar na maioria dos navegadores/dispositivos
       >
         <source src={src} type="video/mp4" />
         Seu navegador não suporta a tag de vídeo.
