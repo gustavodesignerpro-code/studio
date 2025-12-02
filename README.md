@@ -30,14 +30,14 @@ Esta versão é otimizada para um cenário de **loja única**, com um sistema av
 
 A estrutura foi simplificada ao máximo. Você só precisa de um modelo.
 
-### 1.1. Crie o Modelo `Configuração da TV` (Modelo Padrão)
+### 1.1. Crie o Modelo `Items de Midia` (Modelo Padrão)
 
 1. Vá em **"Settings" > "Models"** e clique no `+` para criar um novo modelo.
 2. Escolha **"Standard model"** (é o padrão).
-3. **Model name**: `Configuração da TV`
-4. **API key**: `configuracao_da_tv` (importante que seja exatamente isso!)
+3. **Model name**: `Items de Midia`
+4. **API key**: `items_de_midia` (importante que seja exatamente isso!)
 
-**Campos do Modelo `Configuração da TV`:**
+**Campos do Modelo `Items de Midia`:**
 
 Adicione os seguintes campos a este modelo:
 
@@ -84,7 +84,7 @@ Adicione os seguintes campos a este modelo:
 
 ### 1.2. Adicione seu Conteúdo
 
-1. No menu lateral do DatoCMS, você verá **"Configuração da TV"** na seção "Content". Clique nele.
+1. No menu lateral do DatoCMS, você verá **"Items de Midia"** na seção "Content". Clique nele.
 2. Clique em **"New record"**.
 3. Dê um título, como "TV Principal".
 4. No campo **"Logo da Loja"**, faça o upload da imagem do seu logo.

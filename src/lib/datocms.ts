@@ -7,7 +7,7 @@ const API_URL = 'https://graphql.datocms.com/';
 
 // Estrutura da resposta da API do DatoCMS para um modelo de coleção
 interface DatoResponse {
-  allConfiguracaoDaTvs: {
+  allItemsDeMidia: {
     _updatedAt: string;
     logo: {
       url: string;
@@ -32,7 +32,7 @@ interface DatoResponse {
 // Query GraphQL atualizada para buscar o primeiro item de uma coleção
 const GET_PLAYLIST_QUERY = gql`
   query GetPlaylist {
-    allConfiguracaoDaTvs(first: 1) {
+    allItemsDeMidia(first: 1) {
       _updatedAt # Used for cache invalidation of the whole playlist
       logo {
         url
@@ -73,7 +73,7 @@ export async function fetchPlaylist(etag: string | null): Promise<{ status: numb
     const datoData: DatoResponse = await client.request(GET_PLAYLIST_QUERY);
     
     // Pega a primeira (e única) configuração da TV encontrada
-    const configuracao = datoData.allConfiguracaoDaTvs?.[0];
+    const configuracao = datoData.allItemsDeMidia?.[0];
     const newEtag = configuracao?._updatedAt ?? null;
 
     if (etag && newEtag === etag) {
@@ -81,7 +81,7 @@ export async function fetchPlaylist(etag: string | null): Promise<{ status: numb
     }
 
     if (!configuracao) {
-      return { status: 404, data: { items: [], logoUrl: null }, error: `Nenhuma 'Configuração da TV' encontrada no DatoCMS. Verifique se o modelo foi criado e se existe pelo menos um registro publicado.`, etag: newEtag };
+      return { status: 404, data: { items: [], logoUrl: null }, error: `Nenhuma configuração encontrada no DatoCMS. Verifique se o modelo "Items de Midia" foi criado e se existe pelo menos um registro publicado.`, etag: newEtag };
     }
     
     const transformedItems: PlaylistItem[] = configuracao.items
@@ -116,7 +116,7 @@ export async function fetchPlaylist(etag: string | null): Promise<{ status: numb
     if (error.response && error.response.errors) {
       const notFoundError = error.response.errors.find((e: any) => e.extensions?.code === 'undefinedField' || e.extensions?.code === 'NOT_FOUND');
       if (notFoundError) {
-        return { status: 404, data: { items: [], logoUrl: null }, error: 'O modelo "Configuração da TV" (API Key: configuracao_da_tv) não foi encontrado ou não está publicado. Verifique as configurações no DatoCMS.', etag: null };
+        return { status: 404, data: { items: [], logoUrl: null }, error: 'O modelo "Items de Midia" (API Key: items_de_midia) não foi encontrado ou não está publicado. Verifique as configurações no DatoCMS.', etag: null };
       }
     }
     return { status: 500, data: null, error: error.message, etag: null };
