@@ -26,26 +26,21 @@ Esta versão é otimizada para um cenário de **loja única**, com um sistema av
 
 ---
 
-## 1. Configuração do Projeto DatoCMS
+## 1. Configuração do Projeto DatoCMS (Estrutura Simplificada)
 
-A estrutura foi simplificada para uma única loja.
+A estrutura foi ultra-simplificada para ser gerenciada em um único lugar, sem relações complexas.
 
-### 1.1. Crie os Modelos (Models)
+### 1.1. Crie o Modelo `Item de Mídia` (Bloco Modular)
 
-No seu projeto DatoCMS, crie os seguintes modelos:
+Este bloco definirá os campos para cada item da sua playlist.
 
-**A) Modelo `Item de Mídia` (Modular Content)**
+1.  Vá em **"Settings" > "Modular content"** e clique no `+` para criar um novo "Block Model".
+2.  **Block name**: `Item de Mídia`
+3.  **API key**: `media_item`
 
-Este modelo define os itens que compõem a sua playlist.
+**Campos do Bloco `Item de Mídia`:**
 
-1.  Vá em **"Settings" > "Models"** e clique no `+` para criar um novo modelo.
-2.  Escolha **"Modular content model"**.
-3.  **Model name**: `Item de Mídia`
-4.  **API key**: `media_item`
-
-**Campos do `Item de Mídia`:**
-
-Adicione os seguintes campos a este modelo:
+Adicione os seguintes campos a este bloco:
 
 1.  **Tipo**: `Menu suspenso` (Single-line string, presentation: Dropdown)
     -   **Label**: `Tipo`
@@ -70,9 +65,9 @@ Adicione os seguintes campos a este modelo:
     -   **Chave da API**: `ativo`
     -   **Valor Padrão**: `true`
 
-**B) Modelo `Configuração da TV` (Single Instance)**
+### 1.2. Crie o Modelo `Configuração da TV` (Single Instance)
 
-Este modelo será a tela principal para gerenciar sua playlist.
+Este modelo será a tela principal para gerenciar toda a sua playlist.
 
 1.  Vá em **"Settings" > "Models"** e clique no `+` para criar um novo modelo.
 2.  Escolha **"Single instance model"**.
@@ -83,26 +78,27 @@ Este modelo será a tela principal para gerenciar sua playlist.
 
 Adicione os seguintes campos a este modelo:
 
-1.  **Itens da Playlist**: `Conteúdo Modular` (Modular content)
-    -   **Label**: `Itens da Playlist`
-    -   **Chave da API**: `items`
-    -   **Validação**: Permitir apenas o modelo `Item de Mídia`.
-2.  **Logo**: `Upload de arquivo único` (Single asset)
-    -   **Label**: `Logo`
+1.  **Logo**: `Upload de arquivo único` (Single asset)
+    -   **Label**: `Logo da Loja`
     -   **Chave da API**: `logo`
     -   **Validação**: Exigir que o valor corresponda a um padrão específico -> **Tipo de arquivo**: Imagem.
+2.  **Itens da Playlist**: `Conteúdo Modular` (Modular content)
+    -   **Label**: `Itens da Playlist`
+    -   **Chave da API**: `items`
+    -   **Validação**: Em "Choose which blocks can be created", selecione apenas o bloco `Item de Mídia` que você criou no passo anterior.
 
-### 1.2. Adicione seu Conteúdo
+### 1.3. Adicione seu Conteúdo
 
 1.  No menu lateral do DatoCMS, você verá **"Configuração da TV"** na seção "Single instances". Clique nele.
-2.  No campo **"Logo"**, faça o upload da imagem do seu logo.
+2.  No campo **"Logo da Loja"**, faça o upload da imagem do seu logo.
 3.  No campo **"Itens da Playlist"**, clique em "Adicionar novo bloco" e selecione "Item de Mídia" para cada item que deseja exibir.
-4.  Preencha os campos para cada item:
+4.  Preencha os campos para cada item diretamente ali:
     -   Para **vídeos/imagens**: selecione o tipo, faça upload do arquivo no campo `Mídia` e defina a `duração` (para imagens).
     -   Para **texto**: selecione o tipo, escreva o conteúdo em `Conteúdo do Texto` e defina a `duração`.
-    -   **Importante**: Cada vez que você editar e salvar um item, o campo `_updatedAt` (usado internamente como a `versao`) é atualizado. Isso invalida o cache antigo e força o download do novo conteúdo.
+    -   Marque como `Ativo` para que o item apareça.
+5.  **Importante**: Cada vez que você editar e salvar, o campo `_updatedAt` (usado internamente como a `versao`) é atualizado. Isso invalida o cache antigo e força o download do novo conteúdo. Você pode reordenar os itens arrastando-os.
 
-### 1.3. Obtenha as Chaves da API
+### 1.4. Obtenha as Chaves da API
 
 1.  No seu projeto DatoCMS, vá para **"Settings" > "API Tokens"**.
 2.  Copie o seu token de **"Read-only API token"**.
@@ -140,7 +136,7 @@ NEXT_PUBLIC_DATO_API_TOKEN="SEU_TOKEN_AQUI"
 ### 3.3. Usando na Smart TV
 
 1.  Abra o navegador da sua TV (Android TV, Google TV, Fire TV, etc.).
-2.  Navegue para a URL da sua aplicação na Vercel (ex: `https://meu-storecast.vercel.app`).
+2.  Navegue para a URL da sua aplicação na Vercel (ex: `meu-storecast.vercel.app`).
 3.  Clique em "Iniciar" para entrar em modo de tela cheia.
 
 **Dica para Android TV/Google TV**: Use apps como o ["Website Shortcut"](https://play.google.com/store/apps/details?id=com.deltacdev.websiteshortcut) para criar um atalho na tela inicial que abre a URL diretamente, simulando um app nativo.

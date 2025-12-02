@@ -8,6 +8,7 @@ const API_URL = 'https://graphql.datocms.com/';
 // Estrutura da resposta da API do DatoCMS para o modelo de instância única
 interface DatoResponse {
   configuracaoDaTv: {
+    _updatedAt: string; // ETag for the whole config
     logo: {
       url: string;
     } | null;
@@ -23,15 +24,16 @@ interface DatoResponse {
       texto: string | null;
       duracao: number;
       ativo: boolean;
-      _updatedAt: string;
+      _updatedAt: string; // ETag for the individual block
     }[];
   } | null;
 }
 
-// Query GraphQL atualizada para buscar a "Instância Única"
+// Query GraphQL atualizada para buscar a "Instância Única" com conteúdo modular
 const GET_PLAYLIST_QUERY = gql`
   query GetPlaylist {
     configuracaoDaTv {
+      _updatedAt # Used for cache invalidation of the whole playlist
       logo {
         url
       }
@@ -47,7 +49,7 @@ const GET_PLAYLIST_QUERY = gql`
         texto
         duracao
         ativo
-        _updatedAt
+        _updatedAt # Used for cache invalidation of individual items
       }
     }
   }
@@ -59,46 +61,23 @@ export async function fetchPlaylist(etag: string | null): Promise<{ status: numb
     return { status: 500, data: null, error: 'Token da API do DatoCMS não configurado.', etag: null };
   }
 
-  const headers: HeadersInit = {
-    'Authorization': `Bearer ${token}`,
-    'X-Api-Version': '2023-11-28',
-  };
-
-  if (etag) {
-    headers['If-None-Match'] = etag;
-  }
+  const client = new GraphQLClient(API_URL, {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'X-Api-Version': '2023-11-28',
+    },
+    fetch,
+  });
 
   try {
-    const response = await fetch(API_URL, {
-        method: 'POST',
-        headers: {
-            ...headers,
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            query: GET_PLAYLIST_QUERY,
-        }),
-        next: { revalidate: 0 } // No caching on Next.js level
-    });
-    
-    const newEtag = response.headers.get('ETag');
+     // DatoCMS doesn't support ETag headers well for POST GraphQL.
+     // We will use the top-level _updatedAt field as a manual version check.
+    const datoData: DatoResponse = await client.request(GET_PLAYLIST_QUERY);
+    const newEtag = datoData?.configuracaoDaTv?._updatedAt ?? null;
 
-    if (response.status === 304) {
-      return { status: 304, data: null, etag: newEtag };
+    if (etag && newEtag === etag) {
+      return { status: 304, data: null, etag };
     }
-
-    if (!response.ok) {
-        const errorBody = await response.text();
-        throw new Error(`DatoCMS API Error: ${response.status} ${response.statusText} - ${errorBody}`);
-    }
-
-    const jsonResponse = await response.json();
-
-    if (jsonResponse.errors) {
-      throw new Error(`GraphQL Error: ${jsonResponse.errors.map((e: any) => e.message).join(', ')}`);
-    }
-
-    const datoData: DatoResponse = jsonResponse.data;
 
     if (!datoData.configuracaoDaTv) {
       return { status: 404, data: { items: [], logoUrl: null }, error: `Configuração da TV não encontrada no DatoCMS.`, etag: newEtag };
@@ -119,7 +98,7 @@ export async function fetchPlaylist(etag: string | null): Promise<{ status: numb
           texto: item.texto ?? '',
           duracao: duracao || 10,
           ativo: item.ativo,
-          versao: item._updatedAt, // Use _updatedAt for cache busting
+          versao: item._updatedAt, // Use _updatedAt of the block for cache busting
         };
       });
 
@@ -132,6 +111,13 @@ export async function fetchPlaylist(etag: string | null): Promise<{ status: numb
 
   } catch (error: any) {
     console.error("Failed to fetch from DatoCMS:", error);
+     // Check if the error is a "Not Found" error from the API
+    if (error.response && error.response.errors) {
+      const notFoundError = error.response.errors.find((e: any) => e.extensions?.code === 'NOT_FOUND');
+      if (notFoundError) {
+        return { status: 404, data: { items: [], logoUrl: null }, error: 'Configuração da TV não encontrada. Verifique se o modelo foi criado e publicado.', etag: null };
+      }
+    }
     return { status: 500, data: null, error: error.message, etag: null };
   }
 }
