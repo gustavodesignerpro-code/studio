@@ -5,10 +5,10 @@ import type { PlaylistItem, PlaylistData } from '@/types/playlist';
 
 const API_URL = 'https://graphql.datocms.com/';
 
-// Estrutura da resposta da API do DatoCMS para o modelo de instância única
+// Estrutura da resposta da API do DatoCMS para um modelo de coleção
 interface DatoResponse {
-  configuracaoDaTv: {
-    _updatedAt: string; // ETag for the whole config
+  allConfiguracaoDaTvs: {
+    _updatedAt: string;
     logo: {
       url: string;
     } | null;
@@ -24,15 +24,15 @@ interface DatoResponse {
       texto: string | null;
       duracao: number;
       ativo: boolean;
-      _updatedAt: string; // ETag for the individual block
+      _updatedAt: string;
     }[];
-  } | null;
+  }[];
 }
 
-// Query GraphQL atualizada para buscar a "Instância Única" com conteúdo modular
+// Query GraphQL atualizada para buscar o primeiro item de uma coleção
 const GET_PLAYLIST_QUERY = gql`
   query GetPlaylist {
-    configuracaoDaTv {
+    allConfiguracaoDaTvs(first: 1) {
       _updatedAt # Used for cache invalidation of the whole playlist
       logo {
         url
@@ -70,20 +70,21 @@ export async function fetchPlaylist(etag: string | null): Promise<{ status: numb
   });
 
   try {
-     // DatoCMS doesn't support ETag headers well for POST GraphQL.
-     // We will use the top-level _updatedAt field as a manual version check.
     const datoData: DatoResponse = await client.request(GET_PLAYLIST_QUERY);
-    const newEtag = datoData?.configuracaoDaTv?._updatedAt ?? null;
+    
+    // Pega a primeira (e única) configuração da TV encontrada
+    const configuracao = datoData.allConfiguracaoDaTvs?.[0];
+    const newEtag = configuracao?._updatedAt ?? null;
 
     if (etag && newEtag === etag) {
       return { status: 304, data: null, etag };
     }
 
-    if (!datoData.configuracaoDaTv) {
-      return { status: 404, data: { items: [], logoUrl: null }, error: `Configuração da TV não encontrada no DatoCMS.`, etag: newEtag };
+    if (!configuracao) {
+      return { status: 404, data: { items: [], logoUrl: null }, error: `Nenhuma 'Configuração da TV' encontrada no DatoCMS. Verifique se o modelo foi criado e se existe pelo menos um registro publicado.`, etag: newEtag };
     }
     
-    const transformedItems: PlaylistItem[] = datoData.configuracaoDaTv.items
+    const transformedItems: PlaylistItem[] = configuracao.items
       .filter(item => item.ativo)
       .map((item, index): PlaylistItem => {
         const url = item.media?.url ?? '';
@@ -103,8 +104,8 @@ export async function fetchPlaylist(etag: string | null): Promise<{ status: numb
       });
 
     const playlistData: PlaylistData = {
-      logoUrl: datoData.configuracaoDaTv.logo?.url ?? null,
-      items: transformedItems.sort((a, b) => a.ordem - b.ordem),
+      logoUrl: configuracao.logo?.url ?? null,
+      items: transformedItems, // A ordenação já vem do DatoCMS
     };
 
     return { status: 200, data: playlistData, etag: newEtag };
@@ -115,7 +116,7 @@ export async function fetchPlaylist(etag: string | null): Promise<{ status: numb
     if (error.response && error.response.errors) {
       const notFoundError = error.response.errors.find((e: any) => e.extensions?.code === 'undefinedField' || e.extensions?.code === 'NOT_FOUND');
       if (notFoundError) {
-        return { status: 404, data: { items: [], logoUrl: null }, error: 'O modelo "Configuração da TV" (API Key: configuracao_da_tv) não foi encontrado. Verifique se o modelo foi criado, publicado e se a API Key está correta.', etag: null };
+        return { status: 404, data: { items: [], logoUrl: null }, error: 'O modelo "Configuração da TV" (API Key: configuracao_da_tv) não foi encontrado ou não está publicado. Verifique as configurações no DatoCMS.', etag: null };
       }
     }
     return { status: 500, data: null, error: error.message, etag: null };

@@ -26,82 +26,77 @@ Esta versão é otimizada para um cenário de **loja única**, com um sistema av
 
 ---
 
-## 1. Configuração do Projeto DatoCMS (Estrutura Simplificada)
+## 1. Configuração do Projeto DatoCMS (Estrutura Ultra-Simplificada)
 
-A estrutura foi ultra-simplificada para ser gerenciada em um único lugar, sem relações complexas.
+A estrutura foi simplificada ao máximo. Você só precisa de um modelo.
 
-### 1.1. Crie o Modelo `Item de Mídia` (Bloco Modular)
+### 1.1. Crie o Modelo `Configuração da TV` (Modelo Padrão)
 
-Este bloco definirá os campos para cada item da sua playlist.
+1. Vá em **"Settings" > "Models"** e clique no `+` para criar um novo modelo.
+2. Escolha **"Standard model"** (é o padrão).
+3. **Model name**: `Configuração da TV`
+4. **API key**: `configuracao_da_tv` (importante que seja exatamente isso!)
 
-1.  Vá em **"Settings" > "Modular content"** e clique no `+` para criar um novo "Block Model".
-2.  **Block name**: `Item de Mídia`
-3.  **API key**: `media_item`
-
-**Campos do Bloco `Item de Mídia`:**
-
-Adicione os seguintes campos a este bloco:
-
-1.  **Tipo**: `Menu suspenso` (Single-line string, presentation: Dropdown)
-    -   **Label**: `Tipo`
-    -   **Chave da API**: `tipo`
-    -   **Valores**: `imagem`, `video`, `texto`
-    -   **Validação**: Obrigatório.
-2.  **Mídia**: `Upload de arquivo único` (Single asset)
-    -   **Label**: `Mídia (para Imagem/Vídeo)`
-    -   **Chave da API**: `media`
-    -   **Validação**: Exigir que o valor corresponda a um padrão específico -> **Tipo de arquivo**: Imagem ou Vídeo.
-3.  **Texto**: `Texto de Múltiplas Linhas` (Text, presentation: Multi-line text)
-    -   **Label**: `Conteúdo do Texto`
-    -   **Chave da API**: `texto`
-4.  **Duração**: `Número Inteiro` (Integer)
-    -   **Label**: `Duração (segundos)`
-    -   **Chave da API**: `duracao`
-    -   **Observação**: *Para vídeos, a duração real do arquivo será usada. Este campo serve principalmente para imagens e textos.*
-    -   **Validação**: Obrigatório.
-    -   **Valor Padrão**: `10`
-5.  **Ativo**: `Booleano` (Boolean)
-    -   **Label**: `Ativo?`
-    -   **Chave da API**: `ativo`
-    -   **Valor Padrão**: `true`
-
-### 1.2. Crie o Modelo `Configuração da TV` (Single Instance)
-
-Este modelo será a tela principal para gerenciar toda a sua playlist.
-
-1.  Vá em **"Settings" > "Models"** e clique no `+` para criar um novo modelo.
-2.  Escolha **"Single instance model"**.
-3.  **Model name**: `Configuração da TV`
-4.  **API key**: `configuracao_da_tv`
-
-**Campos da `Configuração da TV`:**
+**Campos do Modelo `Configuração da TV`:**
 
 Adicione os seguintes campos a este modelo:
 
-1.  **Logo**: `Upload de arquivo único` (Single asset)
+1.  **Título Interno**: `Texto de Linha Única` (Single-line string)
+    -   **Label**: `Título Interno (ex: TV da Loja Principal)`
+    -   **Chave da API**: `titulo`
+    -   **Validação**: Marque como "Required" e "Use as title".
+
+2.  **Logo**: `Upload de arquivo único` (Single asset)
     -   **Label**: `Logo da Loja`
     -   **Chave da API**: `logo`
     -   **Validação**: Exigir que o valor corresponda a um padrão específico -> **Tipo de arquivo**: Imagem.
-2.  **Itens da Playlist**: `Conteúdo Modular` (Modular content)
+
+3.  **Itens da Playlist**: `Conteúdo Modular` (Modular content)
     -   **Label**: `Itens da Playlist`
     -   **Chave da API**: `items`
-    -   **Validação**: Em "Choose which blocks can be created", selecione apenas o bloco `Item de Mídia` que você criou no passo anterior.
+    -   Na configuração do campo, clique em **"Create new block"**.
+        -   **Block name**: `Item de Mídia`
+        -   **API key**: `media_item`
+    -   Agora, adicione os seguintes campos **DENTRO** deste bloco `Item de Mídia`:
+        1.  **Tipo**: `Menu suspenso` (Single-line string, presentation: Dropdown)
+            -   **Label**: `Tipo`
+            -   **Chave da API**: `tipo`
+            -   **Valores**: `imagem`, `video`, `texto`
+            -   **Validação**: Obrigatório.
+        2.  **Mídia**: `Upload de arquivo único` (Single asset)
+            -   **Label**: `Mídia (para Imagem/Vídeo)`
+            -   **Chave da API**: `media`
+            -   **Validação**: Exigir que o valor corresponda a um padrão específico -> **Tipo de arquivo**: Imagem ou Vídeo.
+        3.  **Texto**: `Texto de Múltiplas Linhas` (Text, presentation: Multi-line text)
+            -   **Label**: `Conteúdo do Texto`
+            -   **Chave da API**: `texto`
+        4.  **Duração**: `Número Inteiro` (Integer)
+            -   **Label**: `Duração (segundos)`
+            -   **Chave da API**: `duracao`
+            -   **Observação**: *Para vídeos, a duração real do arquivo será usada. Este campo serve principalmente para imagens e textos.*
+            -   **Validação**: Obrigatório.
+            -   **Valor Padrão**: `10`
+        5.  **Ativo**: `Booleano` (Boolean)
+            -   **Label**: `Ativo?`
+            -   **Chave da API**: `ativo`
+            -   **Valor Padrão**: `true`
+    - Salve o bloco e depois salve o campo.
 
-### 1.3. Adicione seu Conteúdo
+### 1.2. Adicione seu Conteúdo
 
-1.  No menu lateral do DatoCMS, você verá **"Configuração da TV"** na seção "Single instances". Clique nele.
-2.  No campo **"Logo da Loja"**, faça o upload da imagem do seu logo.
-3.  No campo **"Itens da Playlist"**, clique em "Adicionar novo bloco" e selecione "Item de Mídia" para cada item que deseja exibir.
-4.  Preencha os campos para cada item diretamente ali:
-    -   Para **vídeos/imagens**: selecione o tipo, faça upload do arquivo no campo `Mídia` e defina a `duração` (para imagens).
-    -   Para **texto**: selecione o tipo, escreva o conteúdo em `Conteúdo do Texto` e defina a `duração`.
-    -   Marque como `Ativo` para que o item apareça.
-5.  **Importante**: Cada vez que você editar e salvar, o campo `_updatedAt` (usado internamente como a `versao`) é atualizado. Isso invalida o cache antigo e força o download do novo conteúdo. Você pode reordenar os itens arrastando-os.
+1. No menu lateral do DatoCMS, você verá **"Configuração da TV"** na seção "Content". Clique nele.
+2. Clique em **"New record"**.
+3. Dê um título, como "TV Principal".
+4. No campo **"Logo da Loja"**, faça o upload da imagem do seu logo.
+5. No campo **"Itens da Playlist"**, clique em "Adicionar novo bloco" e selecione "Item de Mídia" para cada item que deseja exibir.
+6. Preencha os campos para cada item diretamente ali.
+7. **Importante**: Cada vez que você editar e salvar, o campo `_updatedAt` (usado internamente como a `versao`) é atualizado. Isso invalida o cache antigo e força o download do novo conteúdo. Você pode reordenar os itens arrastando-os.
+8. Clique em **"Save"** e depois em **"Publish"**.
 
-### 1.4. Obtenha as Chaves da API
+### 1.3. Obtenha as Chaves da API
 
-1.  No seu projeto DatoCMS, vá para **"Settings" > "API Tokens"**.
-2.  Copie o seu token de **"Read-only API token"**.
+1. No seu projeto DatoCMS, vá para **"Settings" > "API Tokens"**.
+2. Copie o seu token de **"Read-only API token"**.
 
 ---
 
