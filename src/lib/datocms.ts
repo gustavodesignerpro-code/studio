@@ -5,10 +5,8 @@ import type { PlaylistItem, PlaylistData } from '@/types/playlist';
 
 const API_URL = 'https://graphql.datocms.com/';
 
-// Estrutura da resposta da API do DatoCMS para um modelo de instância única
-// O nome do campo principal (itemsDeMidia) deve corresponder à API Key do seu modelo no DatoCMS
 interface DatoResponse {
-  itemsDeMidia: {
+  configuracoDaTv: {
     _updatedAt: string;
     logo: {
       url: string;
@@ -30,31 +28,27 @@ interface DatoResponse {
   } | null;
 }
 
-// Query GraphQL para um modelo de instância única.
-// O campo 'itemsDeMidia' deve ser o camelCase da API Key do modelo ("Items de Midia" -> items_de_midia -> itemsDeMidia).
-// Dentro dos 'items' (conteúdo modular), referenciamos os campos do bloco '... on MediaItemRecord'.
+// Usando a query fornecida pelo usuário e adicionando campos necessários (logo, video duration, _updatedAt)
 const GET_PLAYLIST_QUERY = gql`
   query GetPlaylist {
-    itemsDeMidia {
+    configuracoDaTv {
       _updatedAt
       logo {
         url
       }
       items {
         id
-        ... on MediaItemRecord { # O nome aqui é o PascalCase da API Key do bloco (media_item -> MediaItem) + 'Record'
-          tipo
-          media {
-            url
-            video {
-              duration
-            }
+        tipo
+        media {
+          url
+          video {
+            duration
           }
-          texto
-          duracao
-          ativo
-          _updatedAt
         }
+        texto
+        duracao
+        ativo
+        _updatedAt
       }
     }
   }
@@ -77,7 +71,7 @@ export async function fetchPlaylist(etag: string | null): Promise<{ status: numb
   try {
     const datoData: DatoResponse = await client.request(GET_PLAYLIST_QUERY);
     
-    const configuracao = datoData.itemsDeMidia;
+    const configuracao = datoData.configuracoDaTv;
     const newEtag = configuracao?._updatedAt ?? null;
 
     if (etag && newEtag === etag) {
@@ -85,11 +79,11 @@ export async function fetchPlaylist(etag: string | null): Promise<{ status: numb
     }
 
     if (!configuracao) {
-      return { status: 404, data: { items: [], logoUrl: null }, error: `Nenhuma configuração encontrada para o modelo com API key 'items_de_midia'. Verifique se o modelo foi criado, configurado como instância única e publicado no DatoCMS.`, etag: newEtag };
+      return { status: 404, data: { items: [], logoUrl: null }, error: `Nenhuma configuração encontrada. Verifique se o modelo com API key 'configuraco_da_tv' existe, está como instância única e foi publicado no DatoCMS.`, etag: newEtag };
     }
     
     const transformedItems: PlaylistItem[] = (configuracao.items || [])
-      .filter(item => item && item.ativo) // Garante que o item não é nulo
+      .filter(item => item && item.ativo) 
       .map((item, index): PlaylistItem => {
         const url = item.media?.url ?? '';
         const duracao = item.tipo === 'video' && item.media?.video
@@ -117,10 +111,11 @@ export async function fetchPlaylist(etag: string | null): Promise<{ status: numb
   } catch (error: any) {
     console.error("Failed to fetch from DatoCMS:", error);
     if (error.response && error.response.errors) {
-      const notFoundError = error.response.errors.find((e: any) => e.extensions?.code === 'undefinedField' || e.extensions?.code === 'NOT_FOUND');
-      if (notFoundError) {
-        return { status: 404, data: { items: [], logoUrl: null }, error: "O modelo com API Key 'items_de_midia' não foi encontrado. Verifique o nome do modelo e a API Key no DatoCMS.", etag: null };
+      const graphqlError = error.response.errors[0];
+      if (graphqlError?.extensions?.code === 'undefinedField') {
+        return { status: 404, data: null, error: `O campo '${graphqlError.path.slice(-1)}' não foi encontrado. Verifique a API Key ('${graphqlError.extensions.fieldName}') do seu modelo e seus campos no DatoCMS.`, etag: null };
       }
+       return { status: 500, data: null, error: graphqlError.message, etag: null };
     }
     return { status: 500, data: null, error: error.message, etag: null };
   }
