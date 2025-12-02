@@ -138,8 +138,10 @@ export async function clearOldCache(validKeys: string[]): Promise<void> {
     const cache = await caches.open(CACHE_NAME);
     const cachedRequests = await cache.keys();
     cachedRequests.forEach(req => {
-      const key = req.url.split('/').pop()!; // Heuristic to get key from URL
-      if (!validKeySet.has(key)) {
+      // A chave está embutida no final da URL do request do cache.
+      // Isso é um pouco frágil, mas é a maneira padrão de obter a chave.
+      const keyFromUrl = new URL(req.url).pathname.split('/').pop();
+      if (keyFromUrl && !validKeySet.has(keyFromUrl)) {
         cache.delete(req);
       }
     });
