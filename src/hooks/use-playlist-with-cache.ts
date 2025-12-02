@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from 'react';
@@ -32,8 +33,7 @@ export function usePlaylistWithCache() {
   
   const activeDownloads = useRef(0);
   const downloadQueue = useRef<PlaylistItem[]>([]);
-  const isFirstLoad = useRef(true);
-
+  
   // Poll for updates every 2 minutes
   useEffect(() => {
     const interval = setInterval(() => {
@@ -82,10 +82,6 @@ export function usePlaylistWithCache() {
   useEffect(() => {
     if (!playlist) return;
 
-    if (isFirstLoad.current) {
-        isFirstLoad.current = false;
-    }
-
     const mediaItems = playlist.filter(item => item.tipo === 'imagem' || item.tipo === 'video');
     const validCacheKeys = mediaItems.map(item => `${item.url}_${item.versao}`);
 
@@ -104,6 +100,7 @@ export function usePlaylistWithCache() {
 
         for (const item of mediaItems) {
             const cacheKey = `${item.url}_${item.versao}`;
+            // Do not fetch from network here, just check if it exists
             const cachedUrl = await getMediaUrl(cacheKey, false); 
             if (cachedUrl) {
                 initialCachedKeys.push(cacheKey);
@@ -118,7 +115,7 @@ export function usePlaylistWithCache() {
             ...prev,
             cachedItems: combinedKeys.length,
             cachedKeys: combinedKeys,
-            statusText: 'Verificando mídias...'
+            statusText: 'Verificando mídias em cache...'
           }
         });
         
@@ -128,13 +125,12 @@ export function usePlaylistWithCache() {
                 processQueue();
             }
         } else {
-            setCacheStatus(prev => ({ ...prev, isUpdating: false, statusText: 'Conteúdo atualizado.' }));
+            setCacheStatus(prev => ({ ...prev, isUpdating: false, statusText: 'Conteúdo já está em cache.' }));
         }
     };
     
     checkCacheAndQueueDownloads();
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [playlist, isOnline, processQueue]);
 
 
