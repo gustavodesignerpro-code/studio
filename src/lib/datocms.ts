@@ -18,6 +18,7 @@ interface DatoResponse {
         url: string;
         video?: {
           duration: number;
+          mp4Url: string | null;
         };
       } | null;
       texto: string | null;
@@ -28,7 +29,6 @@ interface DatoResponse {
   } | null;
 }
 
-// Usando a query fornecida pelo usuário e adicionando campos necessários (logo, video duration, _updatedAt)
 const GET_PLAYLIST_QUERY = gql`
   query GetPlaylist {
     configuracoDaTv {
@@ -43,6 +43,7 @@ const GET_PLAYLIST_QUERY = gql`
           url
           video {
             duration
+            mp4Url
           }
         }
         texto
@@ -79,16 +80,24 @@ export async function fetchPlaylist(etag: string | null): Promise<{ status: numb
     }
 
     if (!configuracao) {
-      return { status: 404, data: { items: [], logoUrl: null }, error: `Nenhuma configuração encontrada. Verifique se o modelo com API key 'configuraco_da_tv' existe, está como instância única e foi publicado no DatoCMS.`, etag: newEtag };
+      return { status: 404, data: null, error: "Nenhuma configuração encontrada. Verifique se o modelo com API key 'configuraco_da_tv' existe, está como instância única e foi publicado no DatoCMS.", etag: newEtag };
     }
     
     const transformedItems: PlaylistItem[] = (configuracao.items || [])
       .filter(item => item && item.ativo) 
       .map((item, index): PlaylistItem => {
-        const url = item.media?.url ?? '';
-        const duracao = item.tipo === 'video' && item.media?.video
-            ? Math.round(item.media.video.duration)
-            : item.duracao;
+        let url = '';
+        let duracao = item.duracao;
+
+        if (item.tipo === 'video') {
+          url = item.media?.video?.mp4Url ?? item.media?.url ?? '';
+          // Se a duração do vídeo estiver disponível, use-a. Senão, use a duração definida manualmente.
+          if (item.media?.video?.duration) {
+            duracao = Math.round(item.media.video.duration);
+          }
+        } else {
+          url = item.media?.url ?? '';
+        }
 
         return {
           ordem: index,
@@ -113,7 +122,8 @@ export async function fetchPlaylist(etag: string | null): Promise<{ status: numb
     if (error.response && error.response.errors) {
       const graphqlError = error.response.errors[0];
       if (graphqlError?.extensions?.code === 'undefinedField') {
-        return { status: 404, data: null, error: `O campo '${graphqlError.path.slice(-1)}' não foi encontrado. Verifique a API Key ('${graphqlError.extensions.fieldName}') do seu modelo e seus campos no DatoCMS.`, etag: null };
+        const fieldName = graphqlError.path ? graphqlError.path.slice(-1) : graphqlError.extensions.fieldName;
+        return { status: 404, data: null, error: `O campo '${fieldName}' não foi encontrado. Verifique a API Key do seu modelo e seus campos no DatoCMS. A query esperava encontrar 'configuracoDaTv'.`, etag: null };
       }
        return { status: 500, data: null, error: graphqlError.message, etag: null };
     }
