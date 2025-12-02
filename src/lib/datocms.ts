@@ -30,9 +30,9 @@ interface DatoResponse {
   } | null;
 }
 
-// Query GraphQL para um modelo de instância única
-// O nome do campo 'itemsDeMidia' deve ser exatamente o camelCase da API Key do seu modelo no DatoCMS
-// Ex: API Key 'items_de_midia' -> 'itemsDeMidia'
+// Query GraphQL para um modelo de instância única.
+// O campo 'itemsDeMidia' deve ser o camelCase da API Key do modelo ("Items de Midia" -> items_de_midia -> itemsDeMidia).
+// Dentro dos 'items' (conteúdo modular), referenciamos os campos do bloco '... on MediaItemRecord'.
 const GET_PLAYLIST_QUERY = gql`
   query GetPlaylist {
     itemsDeMidia {
@@ -42,17 +42,19 @@ const GET_PLAYLIST_QUERY = gql`
       }
       items {
         id
-        tipo
-        media {
-          url
-          video {
-            duration
+        ... on MediaItemRecord { # O nome aqui é o PascalCase da API Key do bloco (media_item -> MediaItem) + 'Record'
+          tipo
+          media {
+            url
+            video {
+              duration
+            }
           }
+          texto
+          duracao
+          ativo
+          _updatedAt
         }
-        texto
-        duracao
-        ativo
-        _updatedAt
       }
     }
   }
@@ -87,7 +89,7 @@ export async function fetchPlaylist(etag: string | null): Promise<{ status: numb
     }
     
     const transformedItems: PlaylistItem[] = (configuracao.items || [])
-      .filter(item => item.ativo)
+      .filter(item => item && item.ativo) // Garante que o item não é nulo
       .map((item, index): PlaylistItem => {
         const url = item.media?.url ?? '';
         const duracao = item.tipo === 'video' && item.media?.video
@@ -117,7 +119,7 @@ export async function fetchPlaylist(etag: string | null): Promise<{ status: numb
     if (error.response && error.response.errors) {
       const notFoundError = error.response.errors.find((e: any) => e.extensions?.code === 'undefinedField' || e.extensions?.code === 'NOT_FOUND');
       if (notFoundError) {
-        return { status: 404, data: { items: [], logoUrl: null }, error: "O modelo com API Key 'items_de_midia' não foi encontrado. Verifique as configurações no DatoCMS.", etag: null };
+        return { status: 404, data: { items: [], logoUrl: null }, error: "O modelo com API Key 'items_de_midia' não foi encontrado. Verifique o nome do modelo e a API Key no DatoCMS.", etag: null };
       }
     }
     return { status: 500, data: null, error: error.message, etag: null };

@@ -51,7 +51,7 @@ Adicione os seguintes campos a este modelo:
     -   **Chave da API**: `items`
     -   Na configuração do campo, clique em **"Create new block"**.
         -   **Block name**: `Item de Mídia`
-        -   **API key**: `media_item`
+        -   **API key**: `media_item` (**IMPORTANTE**: A API key do bloco deve ser exatamente esta!)
     -   Agora, adicione os seguintes campos **DENTRO** deste bloco `Item de Mídia`:
         1.  **Tipo**: `Menu suspenso` (Single-line string, presentation: Dropdown)
             -   **Label**: `Tipo`
@@ -96,9 +96,9 @@ Adicione os seguintes campos a este modelo:
 
 ## 2. Configuração do Projeto Local
 
-### 2.1. Crie o arquivo `.env.local`
+### 2.1. Crie o arquivo `.env`
 
-Na raiz do projeto, crie um arquivo `.env.local` e cole seu token da API:
+Na raiz do projeto, crie (ou edite) um arquivo `.env` e cole seu token da API:
 
 ```
 # Substitua pelo seu token de API de somente leitura do DatoCMS
@@ -119,7 +119,7 @@ NEXT_PUBLIC_DATO_API_TOKEN="SEU_TOKEN_AQUI"
 
 1.  Envie seu código para um repositório Git (GitHub, GitLab, etc.).
 2.  Crie uma conta na [Vercel](https://vercel.com) e importe seu projeto.
-3.  Nas configurações do projeto na Vercel, adicione a variável de ambiente do seu arquivo `.env.local` (`NEXT_PUBLIC_DATO_API_TOKEN`).
+3.  Nas configurações do projeto na Vercel, adicione a variável de ambiente do seu arquivo `.env` (`NEXT_PUBLIC_DATO_API_TOKEN`).
 4.  Clique em **"Deploy"**.
 
 ### 3.3. Usando na Smart TV
