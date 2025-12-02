@@ -1,6 +1,6 @@
-# StoreCast - Sinalização Digital com Next.js e Google Drive
+# StoreCast - Sinalização Digital com Next.js e Catbox.moe
 
-O StoreCast é uma aplicação completa de sinalização digital (digital signage) projetada para rodar em qualquer Smart TV com um navegador web. Ele utiliza Next.js 15, TypeScript, Tailwind CSS, e Firebase Firestore para gerenciamento de conteúdo, com todas as mídias (vídeos e imagens) hospedadas diretamente no Google Drive.
+O StoreCast é uma aplicação completa de sinalização digital (digital signage) projetada para rodar em qualquer Smart TV com um navegador web. Ele utiliza Next.js 15, TypeScript, Tailwind CSS, e Firebase Firestore para gerenciamento de conteúdo, com todas as mídias (vídeos e imagens) hospedadas na plataforma [Catbox.moe](https://catbox.moe/).
 
 Esta versão implementa um sistema avançado de **pré-download e cache local**, garantindo que a reprodução seja sempre fluida, sem travamentos, e funcione perfeitamente mesmo com conexões de internet instáveis ou offline após o primeiro carregamento.
 
@@ -9,7 +9,7 @@ Esta versão implementa um sistema avançado de **pré-download e cache local**,
 - **Cache Inteligente**: Baixa e armazena todas as mídias localmente antes de exibi-las. A reprodução é feita 100% a partir do cache, eliminando buffering.
 - **Atualização Automática**: Qualquer alteração na playlist no Firestore (incluindo a mudança de `versao` de um item) dispara um novo download em segundo plano e atualiza o cache.
 - **Operação Offline**: Após o primeiro carregamento completo, a aplicação funciona sem necessidade de conexão com a internet, usando os arquivos em cache.
-- **Suporte a Google Drive**: Utiliza links diretos do Google Drive para buscar as mídias, simplificando o gerenciamento de arquivos.
+- **Suporte a Catbox.moe**: Utiliza links diretos do Catbox.moe para buscar as mídias.
 - **Multi-Loja**: Suporta diferentes playlists para diferentes lojas através de um parâmetro na URL (ex: `?loja=minha-loja`).
 - **Interface Otimizada para TV (10-foot UI)**: Visuais limpos, fontes grandes e transições suaves.
 - **Resiliência**: Tenta reconectar ao Firestore automaticamente e lida de forma elegante com estados de erro, carregamento e playlists vazias.
@@ -21,8 +21,8 @@ Esta versão implementa um sistema avançado de **pré-download e cache local**,
 - **Linguagem**: TypeScript
 - **Estilização**: Tailwind CSS & shadcn/ui
 - **Banco de Dados**: Firebase Firestore
-- **Armazenamento de Mídia**: Google Drive
-- **Cache**: Service Worker (Cache API)
+- **Armazenamento de Mídia**: [Catbox.moe](https://catbox.moe/)
+- **Cache**: Service Worker (Cache API) & IndexedDB
 - **Deployment**: Vercel
 
 ---
@@ -58,12 +58,8 @@ Para permitir que a aplicação leia as playlists publicamente, vá até a aba *
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Permite leitura pública das coleções de playlists e configurações
-    match /playlists/{storeId} {
-      allow read: if true;
-      allow write: if request.auth != null; // Apenas admins autenticados podem escrever
-    }
-    match /config/{storeId} {
+    // Permite leitura pública de todas as coleções
+    match /{document=**} {
       allow read: if true;
       allow write: if request.auth != null; // Apenas admins autenticados podem escrever
     }
@@ -73,23 +69,17 @@ service cloud.firestore {
 
 ---
 
-## 2. Configurando o Google Drive
+## 2. Configurando o Catbox.moe
 
-### 2.1. Organize seus arquivos
+### 2.1. Faça upload dos seus arquivos
 
-Crie uma pasta no seu Google Drive para organizar as mídias da sua sinalização.
+1.  Acesse [https://catbox.moe/](https://catbox.moe/).
+2.  Arraste e solte seus arquivos de imagem (jpg, png, webp) ou vídeo (mp4) na página.
+3.  Após o upload, o site fornecerá um link direto para o arquivo. Ele se parecerá com `https://files.catbox.moe/codigoaleatorio.mp4`.
 
-### 2.2. Obtenha o ID do Arquivo
+### 2.2. Copie o link direto
 
-Para cada arquivo (imagem ou vídeo) que você quer usar:
-1.  Clique com o botão direito no arquivo e selecione **"Compartilhar"** > **"Compartilhar"**.
-2.  Em **"Acesso geral"**, mude para **"Qualquer pessoa com o link"**. Isso é crucial para que o app possa baixar o arquivo.
-3.  Clique em **"Copiar link"**. O link será algo como: `https://drive.google.com/file/d/ID_DO_ARQUIVO/view?usp=sharing`.
-4.  O **ID do Arquivo** é a longa string de caracteres entre `d/` e `/view`. Copie apenas esse ID. É ele que você usará no Firestore.
-
-**URLs geradas pelo código:**
-- **Imagens**: `https://drive.google.com/uc?export=download&id={ID_DO_ARQUIVO}`
-- **Vídeos**: `https://drive.google.com/uc?export=view&id={ID_DO_ARQUIVO}`
+É este link completo que você usará no campo `url` do seu documento no Firestore.
 
 ---
 
@@ -106,8 +96,8 @@ O conteúdo é gerenciado em duas coleções principais: `playlists` e `config`.
 
 - **ordem**: `number` (ex: 1, 2, 3) - Ordem de exibição.
 - **tipo**: `string` - `"imagem"`, `"video"`, ou `"texto"`.
-- **driveId**: `string` - O ID do arquivo do Google Drive (obrigatório para imagem/vídeo).
-- **duracao**: `number` - Duração em segundos (ignorado para vídeos).
+- **url**: `string` - O link direto do Catbox.moe (obrigatório para imagem/vídeo).
+- **duracao**: `number` - Duração em segundos (ignorado para vídeos, que usam sua duração real).
 - **texto**: `string` - Conteúdo para slides do tipo `texto`.
 - **ativo**: `boolean` - `true` para exibir, `false` para ocultar.
 - **versao**: `number` - **MUITO IMPORTANTE!** Comece com `1`. Sempre que você alterar este item (ex: trocar a imagem), incremente este número (para `2`, `3`, etc.). Isso força o app a limpar o cache antigo e baixar a nova versão.
@@ -116,9 +106,11 @@ O conteúdo é gerenciado em duas coleções principais: `playlists` e `config`.
 
 - Usada para configurações globais por loja.
 - O ID do documento também é o ID da loja.
-- **logoDriveId**: `string` - ID do arquivo da logo da loja no Google Drive. Se presente, a logo será exibida no canto inferior esquerdo.
+- **logoUrl**: `string` - URL direta da imagem da logo (pode ser do Catbox também). Se presente, a logo será exibida no canto inferior esquerdo.
 
-### Exemplo de Documento `playlists/main`:
+### Exemplo de Documento `playlists/main` para Importação:
+
+Você pode salvar o JSON abaixo em um arquivo e usar uma ferramenta como o [fire-import](https://www.npmjs.com/package/fire-import) para importar para sua coleção `playlists` com o ID `main`.
 
 ```json
 {
@@ -126,16 +118,17 @@ O conteúdo é gerenciado em duas coleções principais: `playlists` e `config`.
     {
       "ordem": 1,
       "tipo": "imagem",
-      "driveId": "1aB2cD3eF4gH5iJ6kL7mN8oP9qR0sT",
+      "url": "https://files.catbox.moe/g7qf6g.jpg",
       "duracao": 15,
       "ativo": true,
-      "versao": 1
+      "versao": 1,
+      "texto": ""
     },
     {
       "ordem": 2,
       "tipo": "texto",
       "texto": "Grande promoção! 50% de desconto em toda a loja!",
-      "driveId": "",
+      "url": "",
       "duracao": 10,
       "ativo": true,
       "versao": 1
@@ -143,10 +136,29 @@ O conteúdo é gerenciado em duas coleções principais: `playlists` e `config`.
     {
       "ordem": 3,
       "tipo": "video",
-      "driveId": "2bC3dE4fG5hI6jK7lM8nO9pQ0rS1tU",
-      "duracao": 0, // Ignorado
+      "url": "https://files.catbox.moe/p99e0g.mp4",
+      "duracao": 0,
       "ativo": true,
-      "versao": 2 // Este vídeo foi atualizado
+      "versao": 1,
+      "texto": ""
+    },
+    {
+      "ordem": 4,
+      "tipo": "imagem",
+      "url": "https://files.catbox.moe/11fzhp.jpg",
+      "duracao": 15,
+      "ativo": true,
+      "versao": 1,
+      "texto": ""
+    },
+    {
+      "ordem": 5,
+      "tipo": "video",
+      "url": "https://files.catbox.moe/m4r3sb.mp4",
+      "duracao": 0,
+      "ativo": true,
+      "versao": 2,
+      "texto": ""
     }
   ]
 }

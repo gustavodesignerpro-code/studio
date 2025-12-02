@@ -5,7 +5,7 @@ export type PlaylistItemType = 'video' | 'imagem' | 'texto';
 export interface PlaylistItem {
   ordem: number;
   tipo: PlaylistItemType;
-  driveId: string; // Google Drive File ID
+  url: string; // Catbox.moe direct URL
   duracao: number; // Duration in seconds
   texto?: string; // Used when tipo is 'texto'
   ativo: boolean;
@@ -18,5 +18,5 @@ export interface PlaylistDocument {
 }
 
 export interface ConfigDocument {
-  logoDriveId?: string;
+  logoUrl?: string; // Direct URL for the logo
 }

@@ -44,7 +44,7 @@ export function usePlaylistWithCache(storeId: string) {
     setCacheStatus(prev => ({ ...prev, isUpdating: true, statusText: `Baixando mídia ${prev.cachedItems + 1} de ${prev.totalItems}...` }));
 
     try {
-      const cacheKey = `${item.driveId}_${item.versao}`;
+      const cacheKey = `${item.url}_${item.versao}`;
       await cacheMedia(item);
       setCacheStatus(prev => {
         const newCachedKeys = [...prev.cachedKeys, cacheKey];
@@ -55,7 +55,7 @@ export function usePlaylistWithCache(storeId: string) {
         };
       });
     } catch (e) {
-      console.error(`Falha ao baixar ${item.driveId}`, e);
+      console.error(`Falha ao baixar ${item.url}`, e);
     } finally {
       activeDownloads.current--;
       processQueue();
@@ -67,7 +67,7 @@ export function usePlaylistWithCache(storeId: string) {
     if (!playlist) return;
 
     const mediaItems = playlist.filter(item => item.tipo === 'imagem' || item.tipo === 'video');
-    const validCacheKeys = mediaItems.map(item => `${item.driveId}_${item.versao}`);
+    const validCacheKeys = mediaItems.map(item => `${item.url}_${item.versao}`);
 
     setCacheStatus(prev => ({
         ...prev,
@@ -83,7 +83,7 @@ export function usePlaylistWithCache(storeId: string) {
         const itemsToDownload: PlaylistItem[] = [];
 
         for (const item of mediaItems) {
-            const cacheKey = `${item.driveId}_${item.versao}`;
+            const cacheKey = `${item.url}_${item.versao}`;
             const cachedUrl = await getMediaUrl(cacheKey, false); // don't fetch from network here
             if (cachedUrl) {
                 initialCachedKeys.push(cacheKey);

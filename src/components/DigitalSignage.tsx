@@ -12,7 +12,7 @@ import { PreloadingState } from './states/PreloadingState';
 
 export function DigitalSignage() {
   const searchParams = useSearchParams();
-  const storeId = searchParams.get('diniz-charm') || 'main';
+  const storeId = searchParams.get('loja') || 'main';
 
   const {
     playlist,
@@ -55,13 +55,17 @@ export function DigitalSignage() {
   // Filter playlist to only include items that are in cache
   const cachedPlaylist = playlist.filter(item => {
     if (item.tipo === 'texto') return true;
-    const cacheKey = `${item.driveId}_${item.versao}`;
+    const cacheKey = `${item.url}_${item.versao}`;
     return cacheStatus.cachedKeys.includes(cacheKey);
   });
 
-  if (cachedPlaylist.length === 0) {
+  if (cachedPlaylist.length === 0 && cacheStatus.totalItems > 0) {
      const progress = cacheStatus.totalItems > 0 ? (cacheStatus.cachedItems / cacheStatus.totalItems) * 100 : 0;
     return <PreloadingState progress={progress} statusText="Aguardando mídias em cache..." />;
+  }
+  
+  if (cachedPlaylist.length === 0) {
+    return <EmptyState />;
   }
 
   return (

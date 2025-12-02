@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { doc, onSnapshot, query, collection, where } from 'firebase/firestore';
+import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { PlaylistItem, PlaylistDocument, ConfigDocument } from '@/types/playlist';
 
@@ -34,7 +34,7 @@ export function usePlaylist(storeId: string): UsePlaylistReturn {
         if (docSnap.exists()) {
           const data = docSnap.data() as PlaylistDocument;
           const activeItems = (data.items || [])
-            .filter(item => item.ativo)
+            .filter(item => item.ativo && (item.tipo === 'texto' || item.url))
             .sort((a, b) => a.ordem - b.ordem);
           
           setPlaylist(activeItems);
@@ -59,8 +59,8 @@ export function usePlaylist(storeId: string): UsePlaylistReturn {
       (docSnap) => {
         if(docSnap.exists()) {
           const configData = docSnap.data() as ConfigDocument;
-          if (configData.logoDriveId) {
-             setLogoUrl(`https://drive.google.com/uc?export=download&id=${configData.logoDriveId}`);
+          if (configData.logoUrl) {
+             setLogoUrl(configData.logoUrl);
           } else {
             setLogoUrl(null);
           }

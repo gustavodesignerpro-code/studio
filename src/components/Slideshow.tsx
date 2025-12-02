@@ -47,11 +47,14 @@ export function Slideshow({ playlist }: SlideshowProps) {
         return;
       }
       
-      const cacheKey = `${currentItem.driveId}_${currentItem.versao}`;
+      const cacheKey = `${currentItem.url}_${currentItem.versao}`;
       try {
         const url = await getMediaUrl(cacheKey);
         if (!cancelled && isMounted.current) {
           setMediaUrl(url);
+        } else if (!url) {
+            console.error(`Failed to get media URL for ${cacheKey}, it's not in cache.`);
+            if (!cancelled) handleNext(); // Skip if not in cache
         }
       } catch (error) {
         console.error(`Error getting media URL for ${cacheKey}:`, error);
