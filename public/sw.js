@@ -1,20 +1,15 @@
-// Simple service worker for caching.
-// In a real-world scenario, you'd use a more robust solution like Workbox.
-
-const CACHE_NAME = 'storecast-media-cache-v1';
-
+// This file is intentionally left blank.
+// The caching logic is now handled by src/lib/media-cache.ts using IndexedDB
+// and does not require a traditional service worker for this specific implementation.
+// The ServiceWorkerRegistrar component can be removed or kept for future PWA features.
 self.addEventListener('install', (event) => {
-  // Perform install steps
-  event.waitUntil(self.skipWaiting()); // Activate worker immediately
+  console.log('Service Worker installing.');
 });
 
 self.addEventListener('activate', (event) => {
-  // Claim clients immediately, so the page doesn't need to be reloaded.
-  event.waitUntil(self.clients.claim());
+  console.log('Service Worker activating.');
 });
 
 self.addEventListener('fetch', (event) => {
-  // This service worker doesn't intercept fetch requests by default.
-  // Caching is handled manually by the client-side application logic.
-  // This file is mainly here to enable the Cache API for the app.
+  // We are not intercepting fetch events here, as the logic is in the app.
 });

@@ -8,7 +8,7 @@ export function EmptyState() {
       <ListX className="h-24 w-24" />
       <h2 className="mt-6 text-4xl font-bold">Nenhum conteúdo configurado</h2>
       <p className="mt-2 text-xl max-w-xl">
-        A playlist está vazia ou não possui itens ativos. Adicione vídeos, imagens ou textos no Firebase para começar.
+        A playlist está vazia ou não possui itens ativos. Adicione mídias no DatoCMS para começar.
       </p>
     </div>
   );

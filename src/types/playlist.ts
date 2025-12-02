@@ -1,22 +1,17 @@
-import type { Timestamp } from 'firebase/firestore';
 
 export type PlaylistItemType = 'video' | 'imagem' | 'texto';
 
 export interface PlaylistItem {
   ordem: number;
   tipo: PlaylistItemType;
-  url: string; // Catbox.moe direct URL
+  url: string; // Direct URL from DatoCMS
   duracao: number; // Duration in seconds
   texto?: string; // Used when tipo is 'texto'
   ativo: boolean;
-  versao: number; // For cache-busting
-  criadoEm?: Timestamp;
+  versao: string; // For cache-busting (we'll use the _updatedAt field from DatoCMS)
 }
 
-export interface PlaylistDocument {
+export interface PlaylistData {
   items: PlaylistItem[];
-}
-
-export interface ConfigDocument {
-  logoUrl?: string; // Direct URL for the logo
+  logoUrl: string | null;
 }

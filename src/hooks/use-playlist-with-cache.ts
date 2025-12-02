@@ -20,7 +20,7 @@ interface CacheStatus {
 }
 
 export function usePlaylistWithCache(storeId: string) {
-  const { playlist, logoUrl, isLoading, error } = usePlaylist(storeId);
+  const { playlist, logoUrl, isLoading, error, fetchPlaylist } = usePlaylist(storeId);
   const isOnline = useNetworkStatus();
   const [cacheStatus, setCacheStatus] = useState<CacheStatus>({
     totalItems: 0,
@@ -32,9 +32,27 @@ export function usePlaylistWithCache(storeId: string) {
   
   const activeDownloads = useRef(0);
   const downloadQueue = useRef<PlaylistItem[]>([]);
+  const isFirstLoad = useRef(true);
+
+  // Poll for updates every 2 minutes
+  useEffect(() => {
+    if (!isFirstLoad.current) {
+        const interval = setInterval(() => {
+            if (isOnline) {
+                console.log('Verificando atualizações de conteúdo...');
+                fetchPlaylist();
+            }
+        }, 120000); // 2 minutes
+
+        return () => clearInterval(interval);
+    }
+  }, [isOnline, fetchPlaylist]);
 
   const processQueue = useCallback(async () => {
     if (activeDownloads.current >= MAX_CONCURRENT_DOWNLOADS || downloadQueue.current.length === 0) {
+      if (downloadQueue.current.length === 0 && activeDownloads.current === 0) {
+         setCacheStatus(prev => ({ ...prev, isUpdating: false, statusText: 'Conteúdo atualizado.' }));
+      }
       return;
     }
 
@@ -66,6 +84,10 @@ export function usePlaylistWithCache(storeId: string) {
   useEffect(() => {
     if (!playlist) return;
 
+    if (isFirstLoad.current) {
+        isFirstLoad.current = false;
+    }
+
     const mediaItems = playlist.filter(item => item.tipo === 'imagem' || item.tipo === 'video');
     const validCacheKeys = mediaItems.map(item => `${item.url}_${item.versao}`);
 
@@ -84,9 +106,11 @@ export function usePlaylistWithCache(storeId: string) {
 
         for (const item of mediaItems) {
             const cacheKey = `${item.url}_${item.versao}`;
-            const cachedUrl = await getMediaUrl(cacheKey, false); // don't fetch from network here
+            const cachedUrl = await getMediaUrl(cacheKey, false); 
             if (cachedUrl) {
-                initialCachedKeys.push(cacheKey);
+                if (!cacheStatus.cachedKeys.includes(cacheKey)) {
+                   initialCachedKeys.push(cacheKey);
+                }
             } else if(isOnline) {
                 itemsToDownload.push(item);
             }
@@ -94,20 +118,18 @@ export function usePlaylistWithCache(storeId: string) {
         
         setCacheStatus(prev => ({
             ...prev,
-            cachedItems: initialCachedKeys.length,
-            cachedKeys: initialCachedKeys,
+            cachedItems: [...new Set([...prev.cachedKeys, ...initialCachedKeys])].length,
+            cachedKeys: [...new Set([...prev.cachedKeys, ...initialCachedKeys])],
             statusText: 'Verificando mídias...'
         }));
         
-        downloadQueue.current = itemsToDownload;
-
-        if (downloadQueue.current.length === 0) {
-           setCacheStatus(prev => ({ ...prev, isUpdating: false, statusText: 'Conteúdo atualizado.' }));
-        } else {
-            // Start processing the queue
+        if (itemsToDownload.length > 0) {
+            downloadQueue.current = itemsToDownload;
             for (let i = 0; i < MAX_CONCURRENT_DOWNLOADS; i++) {
                 processQueue();
             }
+        } else {
+            setCacheStatus(prev => ({ ...prev, isUpdating: false, statusText: 'Conteúdo atualizado.' }));
         }
     };
     

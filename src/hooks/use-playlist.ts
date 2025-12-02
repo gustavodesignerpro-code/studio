@@ -1,15 +1,15 @@
 "use client";
 
-import { useState, useEffect } from 'react';
-import { doc, onSnapshot } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
-import type { PlaylistItem, PlaylistDocument, ConfigDocument } from '@/types/playlist';
+import { useState, useEffect, useCallback } from 'react';
+import type { PlaylistItem } from '@/types/playlist';
+import { fetchPlaylistByStoreId } from '@/lib/datocms';
 
 interface UsePlaylistReturn {
   playlist: PlaylistItem[] | null;
   logoUrl: string | null;
   isLoading: boolean;
   error: Error | null;
+  fetchPlaylist: () => void;
 }
 
 export function usePlaylist(storeId: string): UsePlaylistReturn {
@@ -17,69 +17,56 @@ export function usePlaylist(storeId: string): UsePlaylistReturn {
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+  const [lastEtag, setLastEtag] = useState<string | null>(null);
 
-  useEffect(() => {
+  const fetchPlaylist = useCallback(async () => {
     if (!storeId) {
         setIsLoading(false);
         setError(new Error("ID da loja não especificado."));
         return;
     }
     
-    // Subscribe to the specific store playlist document
-    const docRef = doc(db, 'playlists', storeId);
-    
-    const unsubscribePlaylist = onSnapshot(
-      docRef,
-      (docSnap) => {
-        if (docSnap.exists()) {
-          const data = docSnap.data() as PlaylistDocument;
-          const activeItems = (data.items || [])
-            .filter(item => item.ativo && (item.tipo === 'texto' || item.url))
-            .sort((a, b) => a.ordem - b.ordem);
-          
-          setPlaylist(activeItems);
-          setError(null);
-        } else {
-          setPlaylist([]); // Set to empty array if document doesn't exist
-          console.warn(`Playlist for store '${storeId}' not found.`);
-        }
-        setIsLoading(false);
-      },
-      (err) => {
-        console.error("Error fetching playlist:", err);
-        setError(new Error("Não foi possível carregar a playlist. Verifique sua conexão e as configurações do Firebase."));
-        setIsLoading(false);
+    // Only set loading true on the very first fetch
+    if (playlist === null) {
+      setIsLoading(true);
+    }
+
+    try {
+      const result = await fetchPlaylistByStoreId(storeId, lastEtag);
+      
+      // If etag is the same, content has not changed
+      if (result.status === 304) {
+        console.log("Playlist não modificada. Usando dados em memória.");
+        return;
       }
-    );
-
-    // Subscribe to the config document for the logo
-    const configRef = doc(db, 'config', storeId);
-    const unsubscribeConfig = onSnapshot(
-      configRef,
-      (docSnap) => {
-        if(docSnap.exists()) {
-          const configData = docSnap.data() as ConfigDocument;
-          if (configData.logoUrl) {
-             setLogoUrl(configData.logoUrl);
-          } else {
-            setLogoUrl(null);
-          }
-        } else {
-          setLogoUrl(null);
-        }
-      },
-      (err) => {
-        console.error("Error fetching config:", err);
-        // Not a fatal error, so we just log it.
+      
+      if (result.status !== 200 || !result.data) {
+        throw new Error(result.error || `Falha ao buscar dados (status: ${result.status})`);
       }
-    );
 
+      setLastEtag(result.etag);
 
-    return () => {
-      unsubscribePlaylist();
-      unsubscribeConfig();
-    };
-  }, [storeId]);
+      const activeItems = (result.data.items || [])
+        .filter(item => item.ativo)
+        .map((item, index) => ({ ...item, ordem: index })) // Re-order based on DatoCMS order
+        .sort((a, b) => a.ordem - b.ordem);
+      
+      setPlaylist(activeItems);
+      setLogoUrl(result.data.logoUrl);
+      setError(null);
+    } catch (err: any) {
+      console.error("Error fetching playlist from DatoCMS:", err);
+      if (playlist === null) { // Only set error if it's the initial load that failed
+        setError(new Error(err.message || "Não foi possível carregar a playlist."));
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  }, [storeId, lastEtag, playlist]);
 
-  return { playlist, logoUrl, isLoading, error };
+  useEffect(() => {
+    fetchPlaylist();
+  }, [storeId]); // Only runs when storeId changes
+
+  return { playlist, logoUrl, isLoading, error, fetchPlaylist };
 }
