@@ -27,7 +27,7 @@ export function FullscreenClock() {
         <div className="text-9xl font-black tracking-tighter" style={{ fontSize: 'clamp(8rem, 25vw, 18rem)' }}>
           {timeString}
         </div>
-        <div className="text-4xl font-normal capitalize text-muted-foreground" style={{ fontSize: 'clamp(2rem, 5vw, 4rem)' }}>
+        <div className="text-4xl font-normal capitalize text-muted-foreground" style={{ fontSize: 'clamp(2rem, 5vw, 3rem)' }}>
           {capitalizedDateString}
         </div>
       </div>
