@@ -48,10 +48,12 @@ export function DigitalSignage() {
 
   if (!isOnline && (!playlist || playlist.length === 0)) {
      return (
-      <div className="flex h-svh w-svh flex-col items-center justify-center bg-background text-muted-foreground p-8 text-center">
-        <WifiOff className="h-24 w-24" />
-        <h2 className="mt-4 text-4xl font-bold">Sem conexão com a internet</h2>
-        <p className="mt-2 text-xl">É necessário conectar à internet para o primeiro carregamento.</p>
+      <div className="flex h-svh w-svh flex-col items-center justify-center bg-background p-8 text-center">
+        <div className="content-rotated">
+            <WifiOff className="h-24 w-24 !rotate-90 mx-auto" />
+            <h2 className="mt-4 text-4xl font-bold">Sem conexão com a internet</h2>
+            <p className="mt-2 text-xl">É necessário conectar à internet para o primeiro carregamento.</p>
+        </div>
       </div>
     );
   }
@@ -67,11 +69,11 @@ export function DigitalSignage() {
         <img 
           src={logoUrl} 
           alt="Store Logo" 
-          className="absolute bottom-4 left-4 h-16 w-auto drop-shadow-lg z-20" 
+          className="absolute bottom-4 left-4 h-16 w-auto drop-shadow-lg z-20 -rotate-90 origin-bottom-left"
         />
       )}
       {isLoading && !isInitialLoad && (
-        <div className="absolute top-4 left-4 z-20 flex items-center gap-2 rounded-lg bg-black/50 px-4 py-2 text-white shadow-2xl backdrop-blur-sm">
+        <div className="absolute top-4 left-4 z-20 flex items-center gap-2 rounded-lg bg-black/50 px-4 py-2 text-white shadow-2xl backdrop-blur-sm -rotate-90 origin-top-left">
            <div className="h-3 w-3 animate-pulse rounded-full bg-accent"></div>
           <span className="text-sm font-medium">Atualizando conteúdo...</span>
         </div>

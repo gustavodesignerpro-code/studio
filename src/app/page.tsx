@@ -34,19 +34,21 @@ export default function HomePage() {
   }
 
   return (
-    <main className="flex h-svh w-svh flex-col items-center justify-center bg-background p-8 text-center">
-      <div className="mb-6 text-primary">
-        <Tv className="h-24 w-24" />
+    <main className="flex h-svh w-svh items-center justify-center bg-background p-8">
+      <div className="content-rotated text-center">
+        <div className="mb-6 text-primary">
+          <Tv className="h-24 w-24 !rotate-90" />
+        </div>
+        <h1 className="mb-3 text-5xl font-black text-primary md:text-7xl font-headline">
+          StoreCast
+        </h1>
+        <p className="mb-10 max-w-md text-lg text-muted-foreground">
+          Sinalização Digital Inteligente para sua Loja
+        </p>
+        <Button onClick={handleStart} size="lg" className="h-14 px-12 text-xl shadow-lg">
+          Iniciar
+        </Button>
       </div>
-      <h1 className="mb-3 text-5xl font-black text-primary md:text-7xl font-headline">
-        StoreCast
-      </h1>
-      <p className="mb-10 max-w-md text-lg text-muted-foreground">
-        Sinalização Digital Inteligente para sua Loja
-      </p>
-      <Button onClick={handleStart} size="lg" className="h-14 px-12 text-xl shadow-lg">
-        Iniciar
-      </Button>
     </main>
   );
 }

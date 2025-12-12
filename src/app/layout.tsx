@@ -26,11 +26,9 @@ export default function RootLayout({
         <meta name="theme-color" content="#000000" />
       </head>
       <body className={`${inter.variable} font-body antialiased`}>
-        <div className="rotated-container">
-          <ServiceWorkerRegistrar />
-          {children}
-          <Toaster />
-        </div>
+        <ServiceWorkerRegistrar />
+        {children}
+        <Toaster />
       </body>
     </html>
   );

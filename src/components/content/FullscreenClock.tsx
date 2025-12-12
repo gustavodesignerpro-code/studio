@@ -23,11 +23,13 @@ export function FullscreenClock() {
 
   return (
     <div className="h-full w-full bg-background flex flex-col items-center justify-center p-16 text-foreground fade-in-content">
-      <div className="text-9xl font-black tracking-tighter" style={{ fontSize: 'clamp(8rem, 25vw, 18rem)' }}>
-        {timeString}
-      </div>
-      <div className="text-4xl font-normal capitalize text-muted-foreground" style={{ fontSize: 'clamp(2rem, 5vw, 4rem)' }}>
-        {capitalizedDateString}
+      <div className="content-rotated">
+        <div className="text-9xl font-black tracking-tighter" style={{ fontSize: 'clamp(8rem, 25vw, 18rem)' }}>
+          {timeString}
+        </div>
+        <div className="text-4xl font-normal capitalize text-muted-foreground" style={{ fontSize: 'clamp(2rem, 5vw, 4rem)' }}>
+          {capitalizedDateString}
+        </div>
       </div>
     </div>
   );
