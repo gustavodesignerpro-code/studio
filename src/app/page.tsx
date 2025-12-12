@@ -2,17 +2,24 @@
 
 import { DigitalSignage } from '@/components/DigitalSignage';
 import { Button } from '@/components/ui/button';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Tv } from 'lucide-react';
 import { requestFullscreen } from '@/lib/fullscreen';
 
 export default function HomePage() {
   const [isStarted, setIsStarted] = useState(false);
+  const startButtonRef = useRef<HTMLButtonElement>(null);
 
   const handleStart = async () => {
     await requestFullscreen();
     setIsStarted(true);
   };
+
+  // Set focus on the start button on component mount
+  useEffect(() => {
+    startButtonRef.current?.focus();
+  }, []);
+
 
   // Lock keyboard inputs to prevent accidental exit from fullscreen
   useEffect(() => {
@@ -45,7 +52,12 @@ export default function HomePage() {
         <p className="mb-10 max-w-md text-lg text-muted-foreground">
           Sinalização Digital Inteligente para sua Loja
         </p>
-        <Button onClick={handleStart} size="lg" className="h-14 px-12 text-xl shadow-lg">
+        <Button
+          ref={startButtonRef}
+          onClick={handleStart}
+          size="lg"
+          className="h-14 px-12 text-xl shadow-lg"
+        >
           Iniciar
         </Button>
       </div>
