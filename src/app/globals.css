@@ -51,6 +51,6 @@
   }
   
   .content-rotated {
-    @apply origin-center -rotate-90 flex h-screen w-screen flex-col items-center justify-center;
+    @apply origin-center rotate-90 flex h-screen w-screen flex-col items-center justify-center;
   }
 }

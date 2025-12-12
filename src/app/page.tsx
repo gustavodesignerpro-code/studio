@@ -44,7 +44,7 @@ export default function HomePage() {
     <main className="flex h-svh w-svh items-center justify-center bg-background p-8">
       <div className="content-rotated text-center">
         <div className="mb-6 text-primary">
-          <Tv className="h-24 w-24 !rotate-90" />
+          <Tv className="h-24 w-24" />
         </div>
         <h1 className="mb-3 text-5xl font-black text-primary md:text-7xl font-headline">
           StoreCast
