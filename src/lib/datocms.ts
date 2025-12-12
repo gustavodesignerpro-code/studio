@@ -89,14 +89,13 @@ export async function fetchPlaylist(etag: string | null): Promise<{ status: numb
         let url = '';
         let duracao = item.duracao;
 
-        if (item.tipo === 'video') {
-          url = item.media?.video?.mp4Url ?? item.media?.url ?? '';
-          // Se a duração do vídeo estiver disponível, use-a. Senão, use a duração definida manualmente.
-          if (item.media?.video?.duration) {
-            duracao = Math.round(item.media.video.duration);
-          }
-        } else {
-          url = item.media?.url ?? '';
+        if (item.tipo === 'video' && item.media) {
+            url = item.media.video?.mp4Url ?? item.media.url;
+            if (item.media.video?.duration) {
+                duracao = Math.round(item.media.video.duration);
+            }
+        } else if (item.media) {
+            url = item.media.url;
         }
 
         return {

@@ -10,18 +10,15 @@ interface VideoPlayerProps {
 export function VideoPlayer({ src, onEnded }: VideoPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
 
-  // Garantir que a fonte do vídeo seja atualizada quando o src muda.
   useEffect(() => {
     const video = videoRef.current;
     if (video) {
         if (video.src !== src) {
             video.src = src;
-            video.load(); // Carrega a nova fonte
+            video.load(); 
         }
         video.play().catch(error => {
             console.warn("Autoplay do vídeo bloqueado, tentando com áudio mudo.", error);
-            // Autoplay pode falhar, especialmente com som. A propriedade 'muted' ajuda,
-            // mas tentamos o play() novamente como fallback.
         });
     }
   }, [src]);
