@@ -32,7 +32,7 @@ export function FullscreenClock({ logoUrl }: FullscreenClockProps) {
           <img 
             src={logoUrl} 
             alt="Logo" 
-            className="h-24 w-auto mb-12"
+            className="h-40 w-auto mb-12"
           />
         )}
         <div className="text-9xl font-black tracking-tighter" style={{ fontSize: 'clamp(8rem, 25vw, 18rem)' }}>
