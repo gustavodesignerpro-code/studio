@@ -15,9 +15,15 @@ export default function HomePage() {
     setIsStarted(true);
   };
 
-  // Set focus on the start button on component mount
+  // Set focus on the start button and clear cache on component mount
   useEffect(() => {
     startButtonRef.current?.focus();
+
+    // Clear media cache on app start
+    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+      navigator.serviceWorker.controller.postMessage({ type: 'CLEAR_MEDIA_CACHE' });
+      console.log('Solicitação de limpeza de cache de mídia enviada ao Service Worker.');
+    }
   }, []);
 
 
