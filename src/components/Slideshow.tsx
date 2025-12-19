@@ -10,9 +10,10 @@ import { Loader } from 'lucide-react';
 
 interface SlideshowProps {
   playlist: PlaylistItem[];
+  logoUrl: string | null;
 }
 
-export function Slideshow({ playlist }: SlideshowProps) {
+export function Slideshow({ playlist, logoUrl }: SlideshowProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const isMounted = useRef(true);
 
@@ -60,7 +61,7 @@ export function Slideshow({ playlist }: SlideshowProps) {
       case 'texto':
         return <TextViewer text={currentItem.texto || ''} />;
       case 'clock':
-        return <FullscreenClock />;
+        return <FullscreenClock logoUrl={logoUrl} />;
       default:
         handleNext(); // Skip invalid item type
         return null;

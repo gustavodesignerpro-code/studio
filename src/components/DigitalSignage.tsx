@@ -64,7 +64,7 @@ export function DigitalSignage() {
 
   return (
     <div className="relative h-svh w-svh overflow-hidden bg-black">
-      <Slideshow playlist={playlist} />
+      <Slideshow playlist={playlist} logoUrl={logoUrl} />
       {logoUrl && (
         <img 
           src={logoUrl} 
